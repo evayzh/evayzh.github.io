@@ -2,11 +2,11 @@ from flask import Flask, send_from_directory, request, jsonify
 import os
 import tiktoken
 
-app = Flask(__name__, static_folder='public')
+app = Flask(__name__)
 
 @app.route('/')
 def home():
-    with open('public/index.html', 'r') as f:
+    with open('docs/index.html', 'r') as f:
         content = f.read()
     
     # Count tokens
@@ -19,12 +19,12 @@ def home():
 
 @app.route('/<path:path>')
 def static_files(path):
-    return send_from_directory('public', path)
+    return send_from_directory('docs', path)
 
 @app.route('/save', methods=['POST'])
 def save():
     content = request.get_data(as_text=True)
-    with open('public/index.html', 'w') as f:
+    with open('docs/index.html', 'w') as f:
         f.write(content)
     return jsonify({'status': 'success'})
 
