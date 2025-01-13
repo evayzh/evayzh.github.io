@@ -1,0 +1,107 @@
+body {
+    line-height: 1.4;
+    font-size: 16px;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    position: relative;
+}
+
+.sidebar {
+    position: fixed;
+    left: 20px;
+    top: 70px;
+    width: 150px;
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sidebar-nav a {
+    color: #666;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.sidebar-nav a:hover {
+    color: #000;
+}
+
+.sidebar-nav a.active {
+    color: #000;
+    font-weight: 500;
+}
+
+/* Sub-navigation styling */
+.sub-nav {
+    margin-left: 15px;
+    margin-top: 4px;
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.sub-nav a {
+    font-size: 13px;
+    color: #888;
+}
+
+.sub-nav.show {
+    display: flex;
+}
+
+#maincontent {
+    max-width: 38em;
+    margin: 15px auto;
+    margin-top: 70px;
+    padding: 0 25px;
+}
+
+ul {
+    margin-top: 0px;
+}
+
+h2 {
+    margin-bottom: 0px;
+}
+
+.section {
+    display: none;
+}
+
+.section.active {
+    display: block;
+}
+
+#quotes ul {
+    list-style-type: disc;
+    padding-left: 20px;
+}
+
+#quotes li {
+    margin-bottom: 20px;
+    line-height: 1.5;
+    color: #333;
+}
+
+/* Style for all sections */
+.section ul {
+    margin-top: 0px;
+    padding-left: 20px;
+    list-style-type: disc;
+}
+
+.section li {
+    margin-bottom: 10px;
+}
+
+@media (max-width: 800px) {
+    .sidebar {
+        display: none;
+    }
+}
