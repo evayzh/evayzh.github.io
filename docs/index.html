@@ -518,7 +518,7 @@
                 
                 update(totalTime, isReversing, time) {
                     if (this.shouldStart(totalTime, isReversing)) {
-                        const growthRate = this.type === 'stem' ? 0.012 : 0.008;
+                        const growthRate = this.type === 'stem' ? 0.006 : 0.004; // Slower growth
                         if (isReversing) {
                             this.birth = Math.max(0, this.birth - growthRate);
                         } else {
@@ -529,8 +529,8 @@
                     }
                     
                     // Subtle breathing for petals, minimal for stem
-                    const breatheIntensity = this.type === 'stem' ? 0.02 : 0.08;
-                    const breathe = Math.sin(time * 0.001 + this.delay) * breatheIntensity;
+                    const breatheIntensity = this.type === 'stem' ? 0.01 : 0.05;
+                    const breathe = Math.sin(time * 0.0008 + this.delay) * breatheIntensity; // Slower breathing
                     this.currentSize = this.size * (1 + breathe);
                 }
                 
@@ -541,12 +541,34 @@
                     ctx.globalAlpha = this.opacity;
                     
                     if (this.type === 'stem') {
-                        // Draw stem as a simple line
+                        // Draw curvy stem from bottom to top
                         ctx.beginPath();
-                        ctx.moveTo(0, 0);
-                        ctx.lineTo(0, this.currentSize * 8); // Stem length
+                        const stemHeight = this.currentSize * 12; // Longer stem
+                        const segments = 20;
+                        const segmentHeight = stemHeight / segments;
+                        
+                        ctx.moveTo(0, stemHeight); // Start at bottom
+                        
+                        for (let i = 0; i <= segments; i++) {
+                            const progress = i / segments;
+                            const y = stemHeight - (progress * stemHeight); // Bottom to top
+                            
+                            // Create gentle S-curve
+                            const curveFactor = Math.sin(progress * Math.PI * 2) * 6;
+                            const x = curveFactor * Math.sin(progress * Math.PI);
+                            
+                            if (progress <= this.birth / (Math.PI/2)) { // Only draw grown portion
+                                if (i === 0) {
+                                    ctx.moveTo(x, y);
+                                } else {
+                                    ctx.lineTo(x, y);
+                                }
+                            }
+                        }
+                        
                         ctx.strokeStyle = 'rgba(139, 115, 85, 0.8)'; // Warm brown
-                        ctx.lineWidth = 2;
+                        ctx.lineWidth = 2.5;
+                        ctx.lineCap = 'round';
                         ctx.stroke();
                     } else {
                         // Draw petal shape
@@ -605,7 +627,7 @@
                     const y = centerY + Math.sin(angle) * layerRadius;
                     
                     const petalAngle = angle + Math.PI/2; // Petals face outward
-                    const delay = 500 + (layer * 12 + petalInLayer) * 60; // Stem grows first, then petals
+                    const delay = 800 + (layer * 12 + petalInLayer) * 100; // Slower sequencing
                     
                     // Vary petal size by layer - more subtle variation
                     const petal = new Petal(x, y, petalAngle, delay, i, numPetals);
@@ -615,7 +637,7 @@
                 }
                 
                 // Add center pistil
-                const pistil = new Petal(centerX, centerY, 0, 600, -1, numPetals);
+                const pistil = new Petal(centerX, centerY, 0, 1000, -1, numPetals); // Later timing
                 pistil.targetSize = 5; // Smaller center
                 scales.push(pistil);
             };
@@ -642,8 +664,8 @@
                     petal.draw(ctx);
                 });
                 
-                time += 10;
-                totalTime += 10;
+                time += 6; // Slower animation timing
+                totalTime += 6;
                 requestAnimationFrame(animate);
             };
             
