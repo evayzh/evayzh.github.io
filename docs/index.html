@@ -39,51 +39,17 @@
             100% { background-position: 0% 50%; }
         }
 
-        .eva-display {
+        .eva-geometric {
             position: fixed;
             right: 20px;
             top: 50%;
             transform: translateY(-50%);
-            font-family: 'Courier New', monospace;
-            font-size: 24px;
-            font-weight: bold;
             z-index: 1000;
-            opacity: 0.7;
-        }
-
-        .eva-letter {
-            display: block;
-            margin: 8px 0;
-            color: #666;
-            transition: all 0.3s ease;
-            animation: eva-pulse 3s ease-in-out infinite;
-        }
-
-        .eva-letter:nth-child(1) { animation-delay: 0s; }
-        .eva-letter:nth-child(2) { animation-delay: 0.5s; }
-        .eva-letter:nth-child(3) { animation-delay: 1s; }
-
-        @keyframes eva-pulse {
-            0%, 70%, 100% { 
-                opacity: 0.7; 
-                transform: scale(1); 
-                color: #666;
-            }
-            35% { 
-                opacity: 1; 
-                transform: scale(1.1); 
-                color: #333;
-            }
-        }
-
-        .eva-display:hover .eva-letter {
-            color: #333;
-            opacity: 1;
-            transform: scale(1.2);
+            opacity: 0.8;
         }
 
         @media (max-width: 768px) {
-            .eva-display {
+            .eva-geometric {
                 display: none;
             }
         }
@@ -515,13 +481,89 @@
         </div>
     </div>
 
-    <div class="eva-display">
-        <span class="eva-letter">E</span>
-        <span class="eva-letter">V</span>
-        <span class="eva-letter">A</span>
+    <div class="eva-geometric">
+        <canvas id="evaCanvas" width="120" height="200"></canvas>
     </div>
 
     <script>
+        // EVA Geometric Pattern
+        (function() {
+            const canvas = document.getElementById('evaCanvas');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            let time = 0;
+            
+            const noise = (x, y, t) => {
+                const n = Math.sin(x * 0.02 + t) * Math.cos(y * 0.02 + t) + 
+                         Math.sin(x * 0.03 - t) * Math.cos(y * 0.01 + t);
+                return (n + 1) / 2;
+            };
+            
+            // Letter patterns using vertical bars
+            const letterPatterns = {
+                E: [
+                    [1, 1, 1, 1, 1],
+                    [1, 0, 0, 0, 0],
+                    [1, 1, 1, 1, 0],
+                    [1, 0, 0, 0, 0],
+                    [1, 1, 1, 1, 1]
+                ],
+                V: [
+                    [1, 0, 0, 0, 1],
+                    [1, 0, 0, 0, 1],
+                    [0, 1, 0, 1, 0],
+                    [0, 1, 0, 1, 0],
+                    [0, 0, 1, 0, 0]
+                ],
+                A: [
+                    [0, 1, 1, 1, 0],
+                    [1, 0, 0, 0, 1],
+                    [1, 1, 1, 1, 1],
+                    [1, 0, 0, 0, 1],
+                    [1, 0, 0, 0, 1]
+                ]
+            };
+            
+            const animate = () => {
+                time += 0.005;
+                
+                ctx.fillStyle = '#F0EEE6';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                const letters = ['E', 'V', 'A'];
+                const letterWidth = 20;
+                const letterHeight = 30;
+                const letterSpacing = 10;
+                
+                letters.forEach((letter, letterIndex) => {
+                    const pattern = letterPatterns[letter];
+                    const startX = letterIndex * (letterWidth + letterSpacing) + 15;
+                    const startY = 50;
+                    
+                    for (let row = 0; row < 5; row++) {
+                        for (let col = 0; col < 5; col++) {
+                            if (pattern[row][col]) {
+                                const x = startX + col * 3;
+                                const y = startY + row * 6;
+                                
+                                const noiseVal = noise(x, y, time + letterIndex);
+                                const barHeight = 4 + noiseVal * 8;
+                                const waveOffset = Math.sin(x * 0.1 + y * 0.1 + time * 2) * 2;
+                                
+                                ctx.fillStyle = '#5E5D59';
+                                ctx.fillRect(x - 1, y + waveOffset - barHeight/2, 2, barHeight);
+                            }
+                        }
+                    }
+                });
+                
+                requestAnimationFrame(animate);
+            };
+            
+            animate();
+        })();
+
         // Show section based on hash
         function showSection(hash) {
             // Remove active class from all sections and links
