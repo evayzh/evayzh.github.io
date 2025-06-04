@@ -1,5 +1,22 @@
 {
   "rewrites": [
-    { "source": "/:path*", "destination": "/:path*" }
+    {
+      "source": "/:path*",
+      "destination": "/archive/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "archive.evazhang.com"
+        }
+      ]
+    },
+    {
+      "source": "/archive/:path*",
+      "destination": "/archive/:path*"
+    },
+    {
+      "source": "/:path*",
+      "destination": "/:path*"
+    }
   ]
 }
