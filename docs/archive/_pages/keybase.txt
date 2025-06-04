@@ -1,0 +1,68 @@
+==================================================================
+https://keybase.io/evayzh
+--------------------------------------------------------------------
+
+I hereby claim:
+
+  * I am an admin of https://evazhang.com
+  * I am evayzh (https://keybase.io/evayzh) on keybase.
+  * I have a public key with fingerprint 59A9 FC86 30B2 C3A6 066F  4130 1295 1AC9 B1C2 B672
+
+To do so, I am signing this object:
+
+{
+  "body": {
+    "key": {
+      "eldest_kid": "01018799c5fde113bb9dc25c21fd6fef4cb608bd478a7fc38d51ef2cd7c3d24390b20a",
+      "fingerprint": "59a9fc8630b2c3a6066f413012951ac9b1c2b672",
+      "host": "keybase.io",
+      "key_id": "12951ac9b1c2b672",
+      "kid": "01018799c5fde113bb9dc25c21fd6fef4cb608bd478a7fc38d51ef2cd7c3d24390b20a",
+      "uid": "62a98f04ca1cd617c31d62f0cea11519",
+      "username": "evayzh"
+    },
+    "service": {
+      "hostname": "evazhang.com",
+      "protocol": "https:"
+    },
+    "type": "web_service_binding",
+    "version": 1
+  },
+  "ctime": 1646635944,
+  "expire_in": 157680000,
+  "prev": "b08a1bb74fe72c973e17ac8bd47229d5b535e7d8691e75ab8baea496bf530bf5",
+  "seqno": 3,
+  "tag": "signature"
+}
+
+which yields the signature:
+
+-----BEGIN PGP MESSAGE-----
+Version: Keybase OpenPGP v2.1.13
+Comment: https://keybase.io/crypto
+
+yMImAnicrVJrSBVBFL6+ErWHkRJhhC1eqBTZ2cfs7iV7KHoxelAQlmi3mdnZ66bu
+3vbu1dQyS8hMMMRECAnCoESigojCwBSjwsoelFQEBfUjQ5CiBxHVrBT96WfzZ5hz
+vu873zlzxuYl+FLj3nXMREabj1+NGx/pifmwf/BcE4dtvYELNHHVdPaiNTqNuqFq
+U+cCHA94oCqaRmRDpwCIGGs6EWQiAEOHBjUkgiGvYl1SVKQYRFR1GVBDILpCRF2Q
+RI3HAo+4PM4wrTB1Io5puUxW1pBmEBWKLE1EBHkIDQmIPBA0GSCiYUAEDBWBEavs
+qMdg5jCK0nzTZjH2CM3a+wf+P/uOzcpBAWmqwUsEAaJDwEBAh4LBE4oAkIHmAaPU
+sVAtZWhahxoaq7gDeRyL1ZmEemP1+vibb6xCVjif2LWMGXFs1yZ2DctUuW4kGvCY
+bkPEg9ZTHPotEsKmpbMpMkYddaKmbXEBwJDENT1VACUIRVmTpDyO7ouYDg2ZHkJW
+oMqz49WhdUwS8yoCGCuSQRWBaIpIgYLI7CwEQdNlLIsyVXQVaoAqMsIqRhRJGsSG
+zL7LkDmvrb2WzQVEZhOFmWTUDFvIjTmUOzB6oyLRF5fqm5MU722XLzUl/c/OtajJ
+39MmC84vvb0hmpCZMzl8X+zfUDZ807zebWY+hn3JuRdPPh/LCK59lbByas6m/P7a
+4qmsr3cH3santPWUV2wvLTz8adGlWNmCVZ09b3YOdXQd/bx1/OB0zeKukqaN2Vyt
+eXn/iyJ9/fyCJ731x2r8PeEhfs1qJzn7CnTuTS9MXnKysuxI/K60ThDryxi89Tp3
+qOXjoW/DzyZ6F2y786AUzp15+iWJ7MFK0H/mdCBI55acCp5odssLcOnIqcYVie1y
+Z2LbSMfEz4H295VFW+zD7fOWZr7MCf4onjor1IsZD9eN+qdDlYUfLH9f1zX/7uU0
+q/VCSnfj/tb0c8ayHb2bN24tffQLCus4bg==
+=Q6X9
+-----END PGP MESSAGE-----
+
+And finally, I am proving ownership of this host by posting or
+appending to this document.
+
+View my publicly-auditable identity here: https://keybase.io/evayzh
+
+==================================================================
