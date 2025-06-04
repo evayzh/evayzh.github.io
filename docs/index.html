@@ -38,22 +38,6 @@
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
         }
-
-        .eva-geometric {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 100;
-            opacity: 0.3;
-            pointer-events: none;
-        }
-
-        @media (max-width: 768px) {
-            .eva-geometric {
-                display: none;
-            }
-        }
     </style>
 </head>
 <body>
@@ -90,9 +74,6 @@
             <p style="color: #666; margin-top: 5px; margin-bottom: 25px; font-size: 14px;">you've reached eva zhang's digital presence</p>
             
             <div class="about-me" style="position: relative;">
-                <div class="eva-geometric">
-                    <canvas id="evaCanvas" width="120" height="160"></canvas>
-                </div>
                 <div id="currently" class="section active">
                     <h3>Currently</h3>
                     <ul>
@@ -485,197 +466,6 @@
     </div>
 
     <script>
-        // Minimalistic Flower Growth Animation - Milk and Honey Style
-        (function() {
-            const canvas = document.getElementById('evaCanvas');
-            if (!canvas) return;
-            
-            const ctx = canvas.getContext('2d');
-            let time = 0;
-            let totalTime = 0;
-            let isReversing = false;
-            const scales = [];
-            
-            class Petal {
-                constructor(x, y, angle, delay, index, totalPetals, type = 'petal') {
-                    this.x = x;
-                    this.y = y;
-                    this.angle = angle;
-                    this.size = 0;
-                    this.targetSize = type === 'stem' ? 3 : 20;
-                    this.delay = delay;
-                    this.reverseDelay = (totalPetals - index - 1) * 100;
-                    this.birth = 0;
-                    this.opacity = 0;
-                    this.currentSize = 0;
-                    this.type = type;
-                }
-                
-                shouldStart(totalTime, isReversing) {
-                    const relevantDelay = isReversing ? this.reverseDelay : this.delay;
-                    return totalTime > relevantDelay;
-                }
-                
-                update(totalTime, isReversing, time) {
-                    if (this.shouldStart(totalTime, isReversing)) {
-                        const growthRate = this.type === 'stem' ? 0.006 : 0.004; // Slower growth
-                        if (isReversing) {
-                            this.birth = Math.max(0, this.birth - growthRate);
-                        } else {
-                            this.birth = Math.min(Math.PI/2, this.birth + growthRate);
-                        }
-                        this.size = this.targetSize * Math.sin(this.birth);
-                        this.opacity = Math.min(this.birth * 0.8, 0.9);
-                    }
-                    
-                    // Subtle breathing for petals, minimal for stem
-                    const breatheIntensity = this.type === 'stem' ? 0.01 : 0.05;
-                    const breathe = Math.sin(time * 0.0008 + this.delay) * breatheIntensity; // Slower breathing
-                    this.currentSize = this.size * (1 + breathe);
-                }
-                
-                draw(ctx) {
-                    ctx.save();
-                    ctx.translate(this.x, this.y);
-                    ctx.rotate(this.angle);
-                    ctx.globalAlpha = this.opacity;
-                    
-                    if (this.type === 'stem') {
-                        // Draw curvy stem from bottom to top
-                        ctx.beginPath();
-                        const stemHeight = this.currentSize * 12; // Longer stem
-                        const segments = 20;
-                        const segmentHeight = stemHeight / segments;
-                        
-                        ctx.moveTo(0, stemHeight); // Start at bottom
-                        
-                        for (let i = 0; i <= segments; i++) {
-                            const progress = i / segments;
-                            const y = stemHeight - (progress * stemHeight); // Bottom to top
-                            
-                            // Create gentle S-curve
-                            const curveFactor = Math.sin(progress * Math.PI * 2) * 6;
-                            const x = curveFactor * Math.sin(progress * Math.PI);
-                            
-                            if (progress <= this.birth / (Math.PI/2)) { // Only draw grown portion
-                                if (i === 0) {
-                                    ctx.moveTo(x, y);
-                                } else {
-                                    ctx.lineTo(x, y);
-                                }
-                            }
-                        }
-                        
-                        ctx.strokeStyle = 'rgba(139, 115, 85, 0.8)'; // Warm brown
-                        ctx.lineWidth = 2.5;
-                        ctx.lineCap = 'round';
-                        ctx.stroke();
-                    } else {
-                        // Draw petal shape
-                        ctx.beginPath();
-                        ctx.moveTo(0, -this.currentSize/2);
-                        ctx.quadraticCurveTo(this.currentSize/2, -this.currentSize/4, this.currentSize/3, 0);
-                        ctx.quadraticCurveTo(this.currentSize/2, this.currentSize/4, 0, this.currentSize/2);
-                        ctx.quadraticCurveTo(-this.currentSize/2, this.currentSize/4, -this.currentSize/3, 0);
-                        ctx.quadraticCurveTo(-this.currentSize/2, -this.currentSize/4, 0, -this.currentSize/2);
-                        ctx.closePath();
-                        
-                        // Milk and Honey gradient fill
-                        const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, this.currentSize/2);
-                        gradient.addColorStop(0, 'rgba(245, 231, 186, 0.8)'); // Cream honey center
-                        gradient.addColorStop(0.5, 'rgba(238, 213, 159, 0.6)'); // Soft gold
-                        gradient.addColorStop(0.8, 'rgba(231, 192, 134, 0.4)'); // Muted honey
-                        gradient.addColorStop(1, 'rgba(220, 180, 120, 0.2)'); // Pale amber edge
-                        
-                        ctx.fillStyle = gradient;
-                        ctx.fill();
-                        
-                        // Delicate outline in warm earth tone
-                        ctx.strokeStyle = 'rgba(180, 150, 100, 0.6)'; // Muted bronze
-                        ctx.lineWidth = 0.6;
-                        ctx.stroke();
-                    }
-                    
-                    ctx.restore();
-                }
-                
-                isComplete() {
-                    return this.birth >= Math.PI/2;
-                }
-            }
-            
-            // Initialize flower with stem in Milk and Honey style
-            const initializeFlower = () => {
-                scales.length = 0;
-                const numPetals = 36; // Fewer petals for more minimalist look
-                const centerX = canvas.width / 2;
-                const centerY = canvas.height / 2 - 10;
-                
-                // Add stem first (grows from bottom)
-                const stemY = centerY + 20;
-                const stem = new Petal(centerX, stemY, 0, 0, -2, numPetals, 'stem');
-                scales.push(stem);
-                
-                // Create flower in layered circular pattern
-                for (let i = 0; i < numPetals; i++) {
-                    const layer = Math.floor(i / 12); // 3 layers of 12 petals each
-                    const petalInLayer = i % 12;
-                    const layerRadius = 12 + layer * 6; // Smaller, more delicate flower
-                    
-                    const angle = (petalInLayer / 12) * Math.PI * 2 + (layer * Math.PI / 18); // Offset each layer
-                    const x = centerX + Math.cos(angle) * layerRadius;
-                    const y = centerY + Math.sin(angle) * layerRadius;
-                    
-                    const petalAngle = angle + Math.PI/2; // Petals face outward
-                    const delay = 800 + (layer * 12 + petalInLayer) * 100; // Slower sequencing
-                    
-                    // Vary petal size by layer - more subtle variation
-                    const petal = new Petal(x, y, petalAngle, delay, i, numPetals);
-                    petal.targetSize = 10 + layer * 2; // Smaller, more delicate petals
-                    
-                    scales.push(petal);
-                }
-                
-                // Add center pistil
-                const pistil = new Petal(centerX, centerY, 0, 1000, -1, numPetals); // Later timing
-                pistil.targetSize = 5; // Smaller center
-                scales.push(pistil);
-            };
-            
-            const animate = () => {
-                // Clear with transparent background
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                
-                // Check if all elements are complete
-                const allComplete = scales.every(petal => petal.isComplete());
-                const allReversed = scales.every(petal => petal.birth <= 0);
-                
-                // Switch direction if needed
-                if (allComplete && !isReversing) {
-                    isReversing = true;
-                    totalTime = 0;
-                } else if (allReversed && isReversing) {
-                    isReversing = false;
-                    totalTime = 0;
-                }
-                
-                scales.forEach(petal => {
-                    petal.update(totalTime, isReversing, time);
-                    petal.draw(ctx);
-                });
-                
-                time += 6; // Slower animation timing
-                totalTime += 6;
-                requestAnimationFrame(animate);
-            };
-            
-            // Set canvas size and initialize
-            canvas.width = 120;
-            canvas.height = 160;
-            initializeFlower();
-            animate();
-        })();
-
         // Show section based on hash
         function showSection(hash) {
             // Remove active class from all sections and links
@@ -762,20 +552,6 @@
                 body: content
             });
         }
-
-        // Remove old feedback form handler
-        // document.getElementById('feedbackForm').addEventListener('submit', function(e) {
-        //     e.preventDefault();
-        //     const textarea = this.querySelector('textarea');
-        //     const feedback = textarea.value;
-            
-        //     // Here you can add code to handle the feedback
-        //     console.log('Feedback received:', feedback);
-            
-        //     // Clear the form and show confirmation
-        //     textarea.value = '';
-        //     alert('Thank you for your feedback!');
-        // });
     </script>
 </body>
 </html>
