@@ -40,12 +40,13 @@
         }
 
         .eva-geometric {
-            position: fixed;
-            right: 20px;
+            position: absolute;
             top: 50%;
-            transform: translateY(-50%);
-            z-index: 1000;
-            opacity: 0.8;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 100;
+            opacity: 0.3;
+            pointer-events: none;
         }
 
         @media (max-width: 768px) {
@@ -88,7 +89,10 @@
             <h2>eva's digital space</h2>
             <p style="color: #666; margin-top: 5px; margin-bottom: 25px; font-size: 14px;">you've reached eva zhang's digital presence</p>
             
-            <div class="about-me">
+            <div class="about-me" style="position: relative;">
+                <div class="eva-geometric">
+                    <canvas id="evaCanvas" width="120" height="160"></canvas>
+                </div>
                 <div id="currently" class="section active">
                     <h3>Currently</h3>
                     <ul>
@@ -478,10 +482,6 @@
                 <p id="token-count" style="color: #666; font-size: 0.9em;">Calculating tokens...</p>
             </div>
         </div>
-    </div>
-
-    <div class="eva-geometric">
-        <canvas id="evaCanvas" width="120" height="200"></canvas>
     </div>
 
     <script>
