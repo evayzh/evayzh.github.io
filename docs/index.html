@@ -13,6 +13,32 @@
     <meta property="og:description" content="eva zhang personal website">
     
     <link rel="stylesheet" type="text/css" href="./css/index.css">
+    <style>
+        .sparkle-btn {
+            display: inline-block;
+            padding: 4px 16px;
+            background: linear-gradient(90deg, #f9d423, #ff4e50, #e1bee7, #42e695, #3bb2b8, #f9d423);
+            background-size: 400% 400%;
+            color: #fff !important;
+            font-weight: bold;
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 2px 8px rgba(255, 78, 80, 0.15);
+            text-decoration: none;
+            position: relative;
+            animation: sparkle 2s linear infinite;
+            transition: box-shadow 0.2s;
+        }
+        .sparkle-btn:hover {
+            box-shadow: 0 4px 16px rgba(255, 78, 80, 0.25);
+            filter: brightness(1.1);
+        }
+        @keyframes sparkle {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -55,7 +81,7 @@
                         <li>live in sf</li>
                         <li>you can find some more of my work under content</li>
                         <li>you can find my experiences <a href="#before">here</a> and current interests <a href="#topics">here</a></li>
-                        <li>an archive of my old website (less minimalist) can be found <a href="https://archive.evazhang.ai" target="_blank">here</a></li>
+                        <li>an archive of my old website (less minimalist) can be found <a href="https://archive.evazhang.ai" target="_blank" class="sparkle-btn">here</a></li>
                     </ul>
                 </div>
                 
