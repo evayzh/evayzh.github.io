@@ -18,8 +18,8 @@ Eva Zhang is an AI researcher and engineer currently working on AI research and 
 - AI native search and indexing
 - Applying AI to solve world problems
 - Model interpretability and fairness
+- Robotics data collection 
 - Multi-agent systems in real-world domains
-- AI for climate and disaster mitigation
 
 ## Contact
 - Email: hello@evazhang.com
