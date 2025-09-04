@@ -1,0 +1,47 @@
+# Eva Zhang
+# AI researcher and engineer
+# https://evazhang.ai
+
+## Hello if you're human 
+If you're reading this hi :) shoot me a note 
+
+## About
+Eva Zhang is an AI researcher and engineer currently working on AI research and engineering. She previously built a startup called Socket (acquired in 2023) and has spent time working on AI research, engineering, and policy. She studied Computer Science (M.S., AI track) and Mathematics (B.S.) at Stanford University.
+
+## Current Work
+- AI research and engineering
+- poetry
+- Based in San Francisco
+- Angel investing in AI and robotics companies
+
+## Research Interests
+- AI native search and indexing
+- Applying AI to solve world problems
+- Model interpretability and fairness
+- Multi-agent systems in real-world domains
+- AI for climate and disaster mitigation
+
+## Contact
+- Email: hello@evazhang.com
+- Twitter: @evayzh
+- Website: https://evazhang.com
+
+## Publications
+- vTune: Verifiable Fine-Tuning for LLMs Through Backdooring (2024)
+- Competing AI: How does competition feedback affect machine learning? (2021)
+- DeepWind: Weakly supervised localization of wind turbines in satellite imagery (2019)
+
+## Investments
+- KnowTex AI
+- Norm AI
+- Hamming AI
+- K-Scale
+- Other stealth AI and robotics companies
+
+## Looking For
+- Collaborators on research and content
+- New ways to apply AI to the world's problems
+- Reading recommendations
+- New productivity stacks
+- Good running routes in SF
+- Matcha setups
