@@ -247,10 +247,18 @@
             z-index: 5;
         }
 
+        /* Hotspots container */
+        #hotspotsContainer {
+            position: absolute;
+            inset: 0;
+            z-index: 10;
+        }
+
         /* Clickable product hotspots */
         .hotspot {
             position: absolute;
             border: 2px solid transparent;
+            background: transparent;
             border-radius: 8px;
             cursor: inherit;
             transition: all 0.15s ease;
@@ -356,6 +364,23 @@
             font-size: 12px;
             color: var(--neon-yellow);
             text-shadow: 0 0 8px var(--neon-yellow);
+        }
+
+        .tooltip-buy {
+            display: block;
+            margin-top: 6px;
+            padding: 4px 8px;
+            background: var(--neon-green);
+            color: black;
+            font-size: 9px;
+            font-weight: bold;
+            text-decoration: none;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .tooltip-buy:hover {
+            background: white;
         }
 
         /* Instructions overlay */
@@ -614,10 +639,21 @@
 
         .receipt-ship {
             margin-top: 12px;
-            padding: 10px;
-            background: #f0f0f0;
-            border-radius: 6px;
-            font-size: 11px;
+            padding: 14px 20px;
+            background: linear-gradient(135deg, var(--neon-green), #00cc44);
+            border-radius: 8px;
+            font-size: 12px;
+            color: black;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            width: 100%;
+            transition: all 0.2s ease;
+        }
+
+        .receipt-ship:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 15px rgba(57, 255, 20, 0.4);
         }
 
         .close-modal {
@@ -647,6 +683,84 @@
             height: calc(100vh - 140px);
             object-fit: cover;
             filter: brightness(0.9);
+        }
+
+        /* Detection overlay */
+        .detection-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            border-radius: 12px;
+            z-index: 50;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+
+        .detection-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .detection-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(0, 255, 242, 0.2);
+            border-top-color: var(--neon-cyan);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .detection-text {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 12px;
+            color: var(--neon-cyan);
+            text-shadow: 0 0 10px var(--neon-cyan);
+        }
+
+        .detection-error {
+            color: var(--neon-pink);
+            text-shadow: 0 0 10px var(--neon-pink);
+        }
+
+        .retry-btn {
+            background: var(--neon-cyan);
+            color: black;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .retry-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px var(--neon-cyan);
+        }
+
+        /* Detected products count badge */
+        .products-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--neon-green);
+            color: black;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+            padding: 8px 12px;
+            border-radius: 20px;
+            z-index: 20;
+            box-shadow: 0 0 15px var(--neon-green);
         }
 
         /* Mobile */
@@ -692,308 +806,27 @@
     <div class="game-container">
         <!-- View Tabs -->
         <div class="view-tabs">
-            <button class="view-tab active" data-view="fridge">🍙 FOOD FRIDGE</button>
+            <button class="view-tab active" data-view="food-display">🥪 SANDWICHES</button>
             <button class="view-tab" data-view="drinks">🥤 DRINKS</button>
-            <button class="view-tab" data-view="store">🏪 STORE VIEW</button>
         </div>
 
         <!-- Fridge View (Main) -->
         <div class="fridge-view" id="fridge-view">
             <div class="fridge-container">
-                <!-- Real konbini fridge image -->
-                <img src="fridge.webp"
-                     alt="Konbini Fridge"
+                <!-- Konbini display image -->
+                <img src="food-display.webp"
+                     alt="Konbini Display"
                      class="fridge-image"
                      id="fridgeImage">
 
-                <!-- Clickable hotspots positioned over products -->
-                <!-- Top shelf - Drinks -->
-                <div class="hotspot" style="top: 2%; left: 5%; width: 12%; height: 8%;"
-                     data-name="Oolong Tea" data-jp="烏龍茶" data-price="150" data-emoji="🍵">
-                    <div class="hotspot-tooltip">
-                        <div class="tooltip-name">Oolong Tea</div>
-                        <div class="tooltip-name-jp">烏龍茶</div>
-                        <div class="tooltip-price">¥150</div>
-                    </div>
+                <!-- Loading overlay -->
+                <div class="detection-overlay" id="detectionOverlay">
+                    <div class="detection-spinner"></div>
+                    <div class="detection-text">🤖 AI detecting products...</div>
                 </div>
 
-                <div class="hotspot" style="top: 2%; left: 18%; width: 10%; height: 8%;"
-                     data-name="Green Tea" data-jp="緑茶" data-price="150" data-emoji="🍵">
-                    <div class="hotspot-tooltip">
-                        <div class="tooltip-name">Green Tea</div>
-                        <div class="tooltip-name-jp">緑茶</div>
-                        <div class="tooltip-price">¥150</div>
-                    </div>
-                </div>
-
-                <div class="hotspot" style="top: 2%; left: 55%; width: 15%; height: 8%;"
-                     data-name="Cup Noodle" data-jp="カップヌードル" data-price="220" data-emoji="🍜">
-                    <div class="hotspot-tooltip">
-                        <div class="tooltip-name">Cup Noodle</div>
-                        <div class="tooltip-name-jp">カップヌードル</div>
-                        <div class="tooltip-price">¥220</div>
-                    </div>
-                </div>
-
-                <!-- Second shelf - Sandwiches -->
-                <div class="hotspot" style="top: 12%; left: 3%; width: 18%; height: 7%;"
-                     data-name="Egg Sandwich" data-jp="たまごサンド" data-price="228" data-emoji="🥪">
-                    <div class="hotspot-tooltip">
-                        <div class="tooltip-name">Tamago Sando</div>
-                        <div class="tooltip-name-jp">たまごサンド</div>
-                        <div class="tooltip-price">¥228</div>
-                    </div>
-                </div>
-
-                <div class="hotspot" style="top: 12%; left: 22%; width: 18%; height: 7%;"
-                     data-name="Ham Sandwich" data-jp="ハムサンド" data-price="248" data-emoji="🥪">
-                    <div class="hotspot-tooltip">
-                        <div class="tooltip-name">Ham Sandwich</div>
-                        <div class="tooltip-name-jp">ハムサンド</div>
-                        <div class="tooltip-price">¥248</div>
-                    </div>
-                </div>
-
-                <!-- Third shelf - Onigiri row -->
-                <div class="hotspot" style="top: 20%; left: 3%; width: 9%; height: 9%;"
-                     data-name="Salmon Onigiri" data-jp="鮭おにぎり" data-price="158" data-emoji="🍙">
-                    <div class="hotspot-tooltip">
-                        <div class="tooltip-name">Salmon Onigiri</div>
-                        <div class="tooltip-name-jp">鮭おにぎり</div>
-                        <div class="tooltip-price">¥158</div>
-                    </div>
-                </div>
-
-                <div class="hotspot" style="top: 20%; left: 13%; width: 9%; height: 9%;"
-                     data-name="Tuna Mayo Onigiri" data-jp="ツナマヨ" data-price="138" data-emoji="🍙">
-                    <div class="hotspot-tooltip">
-                        <div class="tooltip-name">Tuna Mayo</div>
-                        <div class="tooltip-name-jp">ツナマヨ</div>
-                        <div class="tooltip-price">¥138</div>
-                    </div>
-                </div>
-
-                <div class="hotspot" style="top: 20%; left: 23%; width: 9%; height: 9%;"
-                     data-name="Mentaiko Onigiri" data-jp="明太子" data-price="168" data-emoji="🍙">
-                    <div class="hotspot-tooltip">
-                        <div class="tooltip-name">Mentaiko</div>
-                        <div class="tooltip-name-jp">明太子おにぎり</div>
-                        <div class="tooltip-price">¥168</div>
-                    </div>
-                </div>
-
-                <div class="hotspot" style="top: 20%; left: 33%; width: 9%; height: 9%;"
-                     data-name="Umeboshi Onigiri" data-jp="梅" data-price="128" data-emoji="🍙">
-                    <div class="hotspot-tooltip">
-                        <div class="tooltip-name">Umeboshi</div>
-                        <div class="tooltip-name-jp">梅おにぎり</div>
-                        <div class="tooltip-price">¥128</div>
-                    </div>
-                </div>
-
-                <div class="hotspot" style="top: 20%; left: 43%; width: 9%; height: 9%;"
-                     data-name="Kombu Onigiri" data-jp="昆布" data-price="128" data-emoji="🍙">
-                    <div class="hotspot-tooltip">
-                        <div class="tooltip-name">Kombu</div>
-                        <div class="tooltip-name-jp">昆布おにぎり</div>
-                        <div class="tooltip-price">¥128</div>
-                    </div>
-                </div>
-
-                <div class="hotspot" style="top: 20%; left: 53%; width: 9%; height: 9%;"
-                     data-name="Sekihan Onigiri" data-jp="赤飯" data-price="148" data-emoji="🍙">
-                    <div class="hotspot-tooltip">
-                        <div class="tooltip-name">Sekihan</div>
-                        <div class="tooltip-name-jp">赤飯おにぎり</div>
-                        <div class="tooltip-price">¥148</div>
-                    </div>
-                </div>
-
-                <!-- Fourth shelf - More onigiri -->
-                <div class="hotspot" style="top: 30%; left: 3%; width: 10%; height: 9%;"
-                     data-name="Fried Rice Onigiri" data-jp="チャーハン" data-price="158" data-emoji="🍙">
-                    <div class="hotspot-tooltip">
-                        <div class="tooltip-name">Fried Rice Ball</div>
-                        <div class="tooltip-name-jp">チャーハンおにぎり</div>
-                        <div class="tooltip-price">¥158</div>
-                    </div>
-                </div>
-
-                <div class="hotspot" style="top: 30%; left: 14%; width: 10%; height: 9%;"
-                     data-name="Okaka Onigiri" data-jp="おかか" data-price="128" data-emoji="🍙">
-                    <div class="hotspot-tooltip">
-                        <div class="tooltip-name">Okaka</div>
-                        <div class="tooltip-name-jp">おかかおにぎり</div>
-                        <div class="tooltip-price">¥128</div>
-                    </div>
-                </div>
-
-                <div class="hotspot" style="top: 30%; left: 25%; width: 10%; height: 9%;"
-                     data-name="Takana Onigiri" data-jp="高菜" data-price="138" data-emoji="🍙">
-                    <div class="hotspot-tooltip">
-                        <div class="tooltip-name">Takana</div>
-                        <div class="tooltip-name-jp">高菜おにぎり</div>
-                        <div class="tooltip-price">¥138</div>
-                    </div>
-                </div>
-
-                <div class="hotspot" style="top: 30%; left: 55%; width: 12%; height: 9%;"
-                     data-name="Omurice Onigiri" data-jp="オムライス" data-price="168" data-emoji="🍙">
-                    <div class="hotspot-tooltip">
-                        <div class="tooltip-name">Omurice Ball</div>
-                        <div class="tooltip-name-jp">オムライスおにぎり</div>
-                        <div class="tooltip-price">¥168</div>
-                    </div>
-                </div>
-
-                <!-- Fifth shelf - Small items -->
-                <div class="hotspot" style="top: 41%; left: 3%; width: 20%; height: 6%;"
-                     data-name="Inari Sushi" data-jp="いなり寿司" data-price="198" data-emoji="🍣">
-                    <div class="hotspot-tooltip">
-                        <div class="tooltip-name">Inari Sushi Set</div>
-                        <div class="tooltip-name-jp">いなり寿司</div>
-                        <div class="tooltip-price">¥198</div>
-                    </div>
-                </div>
-
-                <!-- Sixth shelf - Bento boxes -->
-                <div class="hotspot" style="top: 49%; left: 3%; width: 18%; height: 9%;"
-                     data-name="Chicken Katsu Bento" data-jp="チキンカツ弁当" data-price="498" data-emoji="🍱">
-                    <div class="hotspot-tooltip">
-                        <div class="tooltip-name">Chicken Katsu Bento</div>
-                        <div class="tooltip-name-jp">チキンカツ弁当</div>
-                        <div class="tooltip-price">¥498</div>
-                    </div>
-                </div>
-
-                <div class="hotspot" style="top: 49%; left: 22%; width: 18%; height: 9%;"
-                     data-name="Tonkatsu Bento" data-jp="とんかつ弁当" data-price="548" data-emoji="🍱">
-                    <div class="hotspot-tooltip">
-                        <div class="tooltip-name">Tonkatsu Bento</div>
-                        <div class="tooltip-name-jp">とんかつ弁当</div>
-                        <div class="tooltip-price">¥548</div>
-                    </div>
-                </div>
-
-                <div class="hotspot" style="top: 49%; left: 41%; width: 18%; height: 9%;"
-                     data-name="Salmon Bento" data-jp="鮭弁当" data-price="498" data-emoji="🍱">
-                    <div class="hotspot-tooltip">
-                        <div class="tooltip-name">Grilled Salmon Bento</div>
-                        <div class="tooltip-name-jp">焼き鮭弁当</div>
-                        <div class="tooltip-price">¥498</div>
-                    </div>
-                </div>
-
-                <div class="hotspot" style="top: 49%; left: 60%; width: 18%; height: 9%;"
-                     data-name="Hamburger Bento" data-jp="ハンバーグ弁当" data-price="528" data-emoji="🍱">
-                    <div class="hotspot-tooltip">
-                        <div class="tooltip-name">Hamburger Bento</div>
-                        <div class="tooltip-name-jp">ハンバーグ弁当</div>
-                        <div class="tooltip-price">¥528</div>
-                    </div>
-                </div>
-
-                <!-- Seventh shelf - More bento -->
-                <div class="hotspot" style="top: 60%; left: 3%; width: 18%; height: 9%;"
-                     data-name="Curry Rice" data-jp="カレーライス" data-price="498" data-emoji="🍛">
-                    <div class="hotspot-tooltip">
-                        <div class="tooltip-name">Curry Rice</div>
-                        <div class="tooltip-name-jp">カレーライス</div>
-                        <div class="tooltip-price">¥498</div>
-                    </div>
-                </div>
-
-                <div class="hotspot" style="top: 60%; left: 22%; width: 16%; height: 9%;"
-                     data-name="Omurice" data-jp="オムライス" data-price="478" data-emoji="🍳">
-                    <div class="hotspot-tooltip">
-                        <div class="tooltip-name">Omurice</div>
-                        <div class="tooltip-name-jp">オムライス</div>
-                        <div class="tooltip-price">¥478</div>
-                    </div>
-                </div>
-
-                <div class="hotspot" style="top: 60%; left: 39%; width: 16%; height: 9%;"
-                     data-name="Makunouchi Bento" data-jp="幕の内弁当" data-price="598" data-emoji="🍱">
-                    <div class="hotspot-tooltip">
-                        <div class="tooltip-name">Makunouchi</div>
-                        <div class="tooltip-name-jp">幕の内弁当</div>
-                        <div class="tooltip-price">¥598</div>
-                    </div>
-                </div>
-
-                <div class="hotspot" style="top: 60%; left: 56%; width: 16%; height: 9%;"
-                     data-name="Karaage Bento" data-jp="唐揚げ弁当" data-price="528" data-emoji="🍗">
-                    <div class="hotspot-tooltip">
-                        <div class="tooltip-name">Karaage Bento</div>
-                        <div class="tooltip-name-jp">唐揚げ弁当</div>
-                        <div class="tooltip-price">¥528</div>
-                    </div>
-                </div>
-
-                <!-- Bottom shelf - Side dishes -->
-                <div class="hotspot" style="top: 71%; left: 3%; width: 14%; height: 8%;"
-                     data-name="Yakisoba" data-jp="焼きそば" data-price="398" data-emoji="🍝">
-                    <div class="hotspot-tooltip">
-                        <div class="tooltip-name">Yakisoba</div>
-                        <div class="tooltip-name-jp">焼きそば</div>
-                        <div class="tooltip-price">¥398</div>
-                    </div>
-                </div>
-
-                <div class="hotspot" style="top: 71%; left: 18%; width: 14%; height: 8%;"
-                     data-name="Pasta Salad" data-jp="パスタサラダ" data-price="298" data-emoji="🥗">
-                    <div class="hotspot-tooltip">
-                        <div class="tooltip-name">Pasta Salad</div>
-                        <div class="tooltip-name-jp">パスタサラダ</div>
-                        <div class="tooltip-price">¥298</div>
-                    </div>
-                </div>
-
-                <div class="hotspot" style="top: 71%; left: 33%; width: 14%; height: 8%;"
-                     data-name="Sushi Pack" data-jp="寿司パック" data-price="498" data-emoji="🍣">
-                    <div class="hotspot-tooltip">
-                        <div class="tooltip-name">Sushi Pack</div>
-                        <div class="tooltip-name-jp">寿司パック</div>
-                        <div class="tooltip-price">¥498</div>
-                    </div>
-                </div>
-
-                <!-- Very bottom - More containers -->
-                <div class="hotspot" style="top: 82%; left: 3%; width: 14%; height: 8%;"
-                     data-name="Udon" data-jp="うどん" data-price="398" data-emoji="🍜">
-                    <div class="hotspot-tooltip">
-                        <div class="tooltip-name">Udon</div>
-                        <div class="tooltip-name-jp">うどん</div>
-                        <div class="tooltip-price">¥398</div>
-                    </div>
-                </div>
-
-                <div class="hotspot" style="top: 82%; left: 18%; width: 14%; height: 8%;"
-                     data-name="Soba" data-jp="そば" data-price="398" data-emoji="🍜">
-                    <div class="hotspot-tooltip">
-                        <div class="tooltip-name">Soba Noodles</div>
-                        <div class="tooltip-name-jp">ざるそば</div>
-                        <div class="tooltip-price">¥398</div>
-                    </div>
-                </div>
-
-                <div class="hotspot" style="top: 82%; left: 33%; width: 14%; height: 8%;"
-                     data-name="Nikujaga" data-jp="肉じゃが" data-price="348" data-emoji="🥘">
-                    <div class="hotspot-tooltip">
-                        <div class="tooltip-name">Nikujaga</div>
-                        <div class="tooltip-name-jp">肉じゃが</div>
-                        <div class="tooltip-price">¥348</div>
-                    </div>
-                </div>
-
-                <div class="hotspot" style="top: 82%; left: 48%; width: 14%; height: 8%;"
-                     data-name="Potato Salad" data-jp="ポテトサラダ" data-price="198" data-emoji="🥔">
-                    <div class="hotspot-tooltip">
-                        <div class="tooltip-name">Potato Salad</div>
-                        <div class="tooltip-name-jp">ポテトサラダ</div>
-                        <div class="tooltip-price">¥198</div>
-                    </div>
-            </div>
+                <!-- Dynamic hotspots will be inserted here by JavaScript -->
+                <div id="hotspotsContainer"></div>
         </div>
 
         <!-- Store View -->
@@ -1025,7 +858,7 @@
         <div class="checkout-inner">
             <div class="checkout-items" id="checkoutItems"></div>
             <div class="checkout-total" id="checkoutTotal">¥0</div>
-            <button class="checkout-btn" onclick="showReceipt()">CHECKOUT →</button>
+            <button class="checkout-btn" onclick="handleCheckout()">CHECKOUT →</button>
         </div>
     </div>
 
@@ -1053,9 +886,9 @@
             </div>
             <div class="receipt-footer">
                 <div>Thank you! ありがとうございました</div>
-                <div class="receipt-ship" style="background: #fff3cd; color: #856404; border: 1px solid #ffc107;">
+                <div class="receipt-ship" style="background: #fff3cd; color: #856404; border: 1px solid #ffc107; cursor: default;">
                     📦 Sorry, we don't ship right now!<br>
-                    <small>If you want it, email <strong>hello [at] evazhang.com</strong></small>
+                    <small style="font-size: 10px;">If you want it, email <strong>hello [at] evazhang.com</strong></small>
                 </div>
             </div>
         </div>
@@ -1065,6 +898,164 @@
         // State
         let basket = [];
         let audioCtx = null;
+        let detectedProducts = [];
+
+        // Configuration
+        let currentView = 'food-display';
+        const VIEW_IMAGES = {
+            'food-display': 'food-display.webp',
+            'drinks': 'drinks.webp'
+        };
+
+        // Static product data (pre-cached)
+        const STATIC_PRODUCTS = {
+            'food-display': [{"name":"Lettuce Sandwich","nameJp":"シャキシャキレタスサンド","price":300,"emoji":"🥪","bbox":{"top":3,"left":8,"width":7,"height":12}},{"name":"Lettuce Sandwich","nameJp":"シャキシャキレタスサンド","price":300,"emoji":"🥪","bbox":{"top":3,"left":15,"width":7,"height":12}},{"name":"Mix Sandwich","nameJp":"ミックスサンド","price":300,"emoji":"🥪","bbox":{"top":3,"left":22,"width":7,"height":12}},{"name":"Mix Sandwich","nameJp":"ミックスサンド","price":300,"emoji":"🥪","bbox":{"top":3,"left":29,"width":7,"height":12}},{"name":"Mix Sandwich","nameJp":"ミックスサンド","price":300,"emoji":"🥪","bbox":{"top":3,"left":36,"width":7,"height":12}},{"name":"Teriyaki Chicken & Egg Sandwich","nameJp":"てりやきチキンとたまご","price":300,"emoji":"🥪","bbox":{"top":3,"left":43,"width":7,"height":12}},{"name":"Tonkatsu Sandwich","nameJp":"とんかつサンド","price":300,"emoji":"🥪","bbox":{"top":3,"left":50,"width":7,"height":12}},{"name":"Pork Fillet Cutlet Mix Sandwich","nameJp":"ヒレかつミックスサンド","price":300,"emoji":"🥪","bbox":{"top":3,"left":57,"width":7,"height":12}},{"name":"Egg Salad Sandwich","nameJp":"たっぷりたまごサンド","price":300,"emoji":"🥪","bbox":{"top":3,"left":70,"width":7,"height":12}},{"name":"Egg Salad Sandwich","nameJp":"たっぷりたまごサンド","price":300,"emoji":"🥪","bbox":{"top":3,"left":77,"width":7,"height":12}},{"name":"Egg Salad Sandwich","nameJp":"たっぷりたまごサンド","price":300,"emoji":"🥪","bbox":{"top":3,"left":84,"width":7,"height":12}},{"name":"Egg Salad Sandwich","nameJp":"たっぷりたまごサンド","price":300,"emoji":"🥪","bbox":{"top":3,"left":91,"width":7,"height":12}},{"name":"Ham, Cheese & Egg Sandwich","nameJp":"ハムチーズたまご","price":300,"emoji":"🥪","bbox":{"top":18,"left":10,"width":7,"height":12}},{"name":"Teriyaki Chicken & Egg Sandwich","nameJp":"てりやきチキンとたまご","price":300,"emoji":"🥪","bbox":{"top":18,"left":17,"width":7,"height":12}},{"name":"Shrimp Cutlet Sandwich","nameJp":"海老カツサンド","price":300,"emoji":"🥪","bbox":{"top":18,"left":24,"width":7,"height":12}},{"name":"Mix Sandwich","nameJp":"ミックスサンド","price":300,"emoji":"🥪","bbox":{"top":18,"left":31,"width":7,"height":12}},{"name":"Miso Katsu Sandwich","nameJp":"味噌カツサンド","price":300,"emoji":"🥪","bbox":{"top":18,"left":38,"width":7,"height":12}},{"name":"Miso Katsu Sandwich","nameJp":"味噌カツサンド","price":300,"emoji":"🥪","bbox":{"top":18,"left":45,"width":7,"height":12}},{"name":"Egg Salad Sandwich","nameJp":"たっぷりたまごサンド","price":300,"emoji":"🥪","bbox":{"top":18,"left":52,"width":7,"height":12}},{"name":"Ham Cutlet & Egg Sandwich","nameJp":"ハムカツたまごサンド","price":300,"emoji":"🥪","bbox":{"top":18,"left":59,"width":7,"height":12}},{"name":"Ham Cutlet & Egg Sandwich","nameJp":"ハムカツたまごサンド","price":300,"emoji":"🥪","bbox":{"top":18,"left":66,"width":7,"height":12}},{"name":"Sandwich Box","nameJp":"サンドイッチBOX","price":300,"emoji":"🍱","bbox":{"top":21,"left":75,"width":14,"height":8}},{"name":"Ham & Cheese Sandwich","nameJp":"全粒粉パンサンド ハムとチーズ","price":300,"emoji":"🍔","bbox":{"top":36,"left":15,"width":10,"height":7}},{"name":"Ham & Cheese Sandwich","nameJp":"全粒粉パンサンド ハムとチーズ","price":300,"emoji":"🍔","bbox":{"top":36,"left":25,"width":10,"height":7}},{"name":"Ham and Egg Box","nameJp":"ハムとたまごのBOX","price":300,"emoji":"🥖","bbox":{"top":35,"left":35,"width":13,"height":7}},{"name":"Pizza Sand Double Cheese","nameJp":"ピザサンド Wチーズ","price":278,"emoji":"🍕","bbox":{"top":35,"left":58,"width":7,"height":10}},{"name":"Pizza Sand Melty Cheese & Ripe Tomato","nameJp":"ピザサンド とろーりチーズ＆完熟トマト","price":280,"emoji":"🍕","bbox":{"top":35,"left":75,"width":7,"height":10}},{"name":"Pizza Sand Famichiki","nameJp":"ピザサンド ファミチキ","price":250,"emoji":"🍕","bbox":{"top":35,"left":82,"width":7,"height":10}},{"name":"Ham & Cheese Tortilla","nameJp":"ハム&チーズトルティーヤ","price":300,"emoji":"🌯","bbox":{"top":49,"left":28,"width":9,"height":7}},{"name":"Ham & Cheese Tortilla","nameJp":"ハム&チーズトルティーヤ","price":300,"emoji":"🌯","bbox":{"top":49,"left":37,"width":9,"height":7}},{"name":"Teriyaki Chicken & Egg Roll","nameJp":"照焼チキンとたまご","price":300,"emoji":"🥖","bbox":{"top":48,"left":46,"width":13,"height":7}},{"name":"Pastrami Pork Roll","nameJp":"パストラミポーク","price":300,"emoji":"🥖","bbox":{"top":48,"left":75,"width":13,"height":7}},{"name":"Hokkaido Potato Salad","nameJp":"北海道産じゃがいものポテトサラダ","price":300,"emoji":"🥗","bbox":{"top":61,"left":15,"width":7,"height":7}},{"name":"Simmered Hijiki Seaweed","nameJp":"ひじきの煮物","price":300,"emoji":"🥗","bbox":{"top":61,"left":23,"width":7,"height":7}},{"name":"Macaroni Salad","nameJp":"マカロニサラダ","price":300,"emoji":"🥗","bbox":{"top":61,"left":31,"width":7,"height":7}},{"name":"Smashed Cucumber Salad","nameJp":"たたききゅうり","price":300,"emoji":"🥒","bbox":{"top":61,"left":40,"width":7,"height":7}},{"name":"Gobo Burdock Root Salad","nameJp":"ごぼうサラダ","price":300,"emoji":"🥗","bbox":{"top":61,"left":49,"width":7,"height":7}},{"name":"Pumpkin Salad","nameJp":"かぼちゃサラダ","price":300,"emoji":"🥗","bbox":{"top":61,"left":66,"width":7,"height":7}},{"name":"Steamed Chicken with Sesame Sauce","nameJp":"蒸し鶏の胡麻だれ","price":300,"emoji":"🥗","bbox":{"top":73,"left":18,"width":8,"height":8}},{"name":"Tofu and Hijiki Japanese-style Salad","nameJp":"豆腐とひじきの和風サラダ","price":300,"emoji":"🥗","bbox":{"top":73,"left":27,"width":8,"height":8}},{"name":"Egg Macaroni Salad","nameJp":"たまごのマカロニサラダ","price":300,"emoji":"🥗","bbox":{"top":73,"left":37,"width":8,"height":8}},{"name":"Shrimp and Broccoli Tartar Salad","nameJp":"海老とブロッコリーのタルタルサラダ","price":300,"emoji":"🥗","bbox":{"top":73,"left":46,"width":8,"height":8}},{"name":"Mentaiko Potato Salad","nameJp":"明太ポテトサラダ","price":300,"emoji":"🥗","bbox":{"top":73,"left":55,"width":8,"height":8}},{"name":"Source Yakisoba","nameJp":"ソース焼そば","price":300,"emoji":"🍜","bbox":{"top":82,"left":10,"width":10,"height":9}},{"name":"Chicken Soboro and Egg","nameJp":"鶏そぼろと玉子","price":300,"emoji":"🍱","bbox":{"top":82,"left":20,"width":10,"height":9}},{"name":"Soy Koji Fried Chicken","nameJp":"醤油こうじの鶏唐揚げ","price":300,"emoji":"🍗","bbox":{"top":82,"left":30,"width":10,"height":9}},{"name":"Potato & Wiener","nameJp":"ポテト&ウインナー","price":300,"emoji":"🍟","bbox":{"top":82,"left":40,"width":10,"height":9}},{"name":"Chicken Tsukune","nameJp":"鶏つくね","price":300,"emoji":"🍢","bbox":{"top":82,"left":50,"width":10,"height":9}},{"name":"Salt-Grilled Mackerel","nameJp":"さばの塩焼き","price":300,"emoji":"🐟","bbox":{"top":82,"left":62,"width":14,"height":9}},{"name":"Large Flavorful Yakisoba","nameJp":"大盛香味焼そば","price":300,"emoji":"🍜","bbox":{"top":93,"left":5,"width":10,"height":7}},{"name":"Okonomiyaki","nameJp":"お好み焼","price":300,"emoji":"🍳","bbox":{"top":93,"left":15,"width":14,"height":7}},{"name":"Demi-glace Sauce Hamburg Steak","nameJp":"デミグラスソースのハンバーグ","price":300,"emoji":"🍔","bbox":{"top":93,"left":52,"width":14,"height":8}}],
+            'drinks': [{"name":"Ito En 1 Day's Worth of Vegetables","nameJp":"伊藤園 1日分の野菜","price":113,"emoji":"🧃","bbox":{"top":14,"left":0,"width":6,"height":16}},{"name":"Ito En 1 Day's Worth of Vegetables","nameJp":"伊藤園 1日分の野菜","price":113,"emoji":"🧃","bbox":{"top":14,"left":6,"width":6,"height":16}},{"name":"Ito En Vitamin Vegetables","nameJp":"伊藤園 ビタミン野菜","price":113,"emoji":"🧃","bbox":{"top":14,"left":13,"width":6,"height":16}},{"name":"Kagome Yasai Ichinichi Kore Ippon","nameJp":"カゴメ 野菜一日これ一本","price":107,"emoji":"🧃","bbox":{"top":14,"left":26,"width":6,"height":16}},{"name":"Kagome Yasai Seikatsu 100","nameJp":"カゴメ 野菜生活100","price":113,"emoji":"🧃","bbox":{"top":14,"left":35,"width":6,"height":16}},{"name":"Kagome Tomato Juice","nameJp":"カゴメ トマトジュース","price":107,"emoji":"🍅","bbox":{"top":14,"left":54,"width":6,"height":16}},{"name":"Ito En Mainichi Ippai no Aojiru","nameJp":"伊藤園 毎日1杯の青汁","price":113,"emoji":"🧃","bbox":{"top":14,"left":64,"width":6,"height":16}},{"name":"Kikkoman Chosei Tonyu","nameJp":"キッコーマン 調製豆乳","price":105,"emoji":"🥛","bbox":{"top":14,"left":70,"width":6,"height":16}},{"name":"Meiji Oishii Gyunyu","nameJp":"明治 おいしい牛乳","price":125,"emoji":"🥛","bbox":{"top":13,"left":76,"width":8,"height":18}},{"name":"Kagome Smoothie","nameJp":"カゴメ Smoothie","price":176,"emoji":"🥤","bbox":{"top":37,"left":4,"width":7,"height":17}},{"name":"Kagome Smoothie","nameJp":"カゴメ Smoothie","price":176,"emoji":"🥤","bbox":{"top":37,"left":11,"width":7,"height":17}},{"name":"Kagome Watermelon & Acerola","nameJp":"カゴメ スイカ＆アセロラ","price":136,"emoji":"🍉","bbox":{"top":37,"left":18,"width":7,"height":17}},{"name":"Tropicana Essentials Multivitamin","nameJp":"トロピカーナ エッセンシャルズ マルチビタミン","price":152,"emoji":"🍊","bbox":{"top":37,"left":25,"width":7,"height":17}},{"name":"Tropicana Essentials Fiber","nameJp":"トロピカーナ エッセンシャルズ 食物繊維","price":152,"emoji":"🍑","bbox":{"top":37,"left":32,"width":7,"height":17}},{"name":"Tropicana Iron","nameJp":"トロピカーナ 鉄分","price":198,"emoji":"🍇","bbox":{"top":37,"left":39,"width":7,"height":17}},{"name":"ZAVAS Milk Protein Cocoa","nameJp":"ザバス ミルクプロテイン ココア","price":169,"emoji":"💪","bbox":{"top":38,"left":53,"width":6,"height":16}},{"name":"ZAVAS Milk Protein Banana","nameJp":"ザバス ミルクプロテイン バナナ","price":169,"emoji":"🍌","bbox":{"top":38,"left":59,"width":6,"height":16}},{"name":"ZAVAS Milk Protein Fat 0","nameJp":"ザバス ミルクプロテイン 脂肪0","price":205,"emoji":"💪","bbox":{"top":38,"left":65,"width":6,"height":16}},{"name":"1 Day's Iron Drinkable Yogurt","nameJp":"1日分の鉄分 のむヨーグルト","price":125,"emoji":"🥤","bbox":{"top":38,"left":77,"width":6,"height":16}},{"name":"Nokyo Apple Juice","nameJp":"農協果汁 アップル","price":110,"emoji":"🍎","bbox":{"top":38,"left":83,"width":6,"height":16}},{"name":"Nokyo Orange Juice","nameJp":"農協果汁 オレンジ","price":110,"emoji":"🍊","bbox":{"top":38,"left":89,"width":6,"height":16}},{"name":"Oishii Meneki Care","nameJp":"おいしい免疫ケア","price":144,"emoji":"🥛","bbox":{"top":62,"left":0,"width":5,"height":13}},{"name":"PLUS Calpis","nameJp":"PLUS カルピス","price":128,"emoji":"🥛","bbox":{"top":62,"left":18,"width":6,"height":13}},{"name":"Plain Yogurt Drink Pouch","nameJp":"のむヨーグルト プレーン","price":144,"emoji":"🥤","bbox":{"top":61,"left":31,"width":9,"height":14}},{"name":"Dense Yogurt","nameJp":"濃密ヨーグルト","price":184,"emoji":"🥛","bbox":{"top":62,"left":40,"width":9,"height":13}},{"name":"Plain Yogurt Drink Pouch","nameJp":"のむヨーグルト プレーン","price":144,"emoji":"🥤","bbox":{"top":61,"left":49,"width":9,"height":14}},{"name":"Blueberry Yogurt Drink Pouch","nameJp":"のむヨーグルト ブルーベリー","price":156,"emoji":"🥤","bbox":{"top":61,"left":57,"width":9,"height":14}},{"name":"Strawberry Yogurt Drink Pouch","nameJp":"のむヨーグルト いちご","price":156,"emoji":"🍓","bbox":{"top":61,"left":66,"width":9,"height":14}},{"name":"Yatsugatake Kogen Farm Cafe au Lait","nameJp":"八ヶ岳高原牧場 カフェ・オ・レ","price":161,"emoji":"☕","bbox":{"top":61,"left":77,"width":10,"height":14}},{"name":"Caffe Latte","nameJp":"カフェラテ","price":200,"emoji":"☕","bbox":{"top":84,"left":2,"width":9,"height":14}},{"name":"Caffe Latte","nameJp":"カフェラテ","price":200,"emoji":"☕","bbox":{"top":84,"left":11,"width":9,"height":14}},{"name":"Caffe Latte","nameJp":"カフェラテ","price":200,"emoji":"☕","bbox":{"top":84,"left":20,"width":9,"height":14}},{"name":"Black Coffee","nameJp":"ブラックコーヒー","price":156,"emoji":"☕","bbox":{"top":84,"left":30,"width":9,"height":14}},{"name":"Black Coffee","nameJp":"ブラックコーヒー","price":156,"emoji":"☕","bbox":{"top":84,"left":39,"width":9,"height":14}},{"name":"Peach Smoothie","nameJp":"ふんわり香る もものスムージー","price":158,"emoji":"🍑","bbox":{"top":84,"left":48,"width":8,"height":14}},{"name":"Tropical Mix","nameJp":"トロピカルミックス","price":158,"emoji":"🍍","bbox":{"top":84,"left":56,"width":8,"height":14}},{"name":"Pink Smoothie","nameJp":"グリーンスムージー","price":158,"emoji":"🥤","bbox":{"top":84,"left":64,"width":8,"height":14}},{"name":"Banana Ole","nameJp":"バナナオレ","price":158,"emoji":"🍌","bbox":{"top":84,"left":73,"width":8,"height":14}},{"name":"Banana Ole","nameJp":"バナナオレ","price":158,"emoji":"🍌","bbox":{"top":84,"left":80,"width":8,"height":14}}]
+        };
+
+        // Initialize products from static data
+        function initProductDetection(view = currentView) {
+            const overlay = document.getElementById('detectionOverlay');
+            const container = document.getElementById('hotspotsContainer');
+
+            // Update image
+            const img = document.getElementById('fridgeImage');
+            img.src = VIEW_IMAGES[view] || VIEW_IMAGES['food-display'];
+            currentView = view;
+
+            // Use static data
+            detectedProducts = STATIC_PRODUCTS[view] || STATIC_PRODUCTS['food-display'];
+
+            // Create hotspots for each product
+            container.innerHTML = '';
+            detectedProducts.forEach((product, index) => {
+                const hotspot = createHotspot(product, index);
+                container.appendChild(hotspot);
+            });
+
+            // Remove old badge if exists
+            const oldBadge = document.querySelector('.products-badge');
+            if (oldBadge) oldBadge.remove();
+
+            // Add products badge
+            const badge = document.createElement('div');
+            badge.className = 'products-badge';
+            badge.textContent = `${detectedProducts.length} products`;
+            document.querySelector('.fridge-container').appendChild(badge);
+
+            // Attach click handlers
+            attachHotspotHandlers();
+
+            // Hide overlay
+            overlay.classList.add('hidden');
+
+            console.log(`✅ Loaded ${detectedProducts.length} products for ${view}`);
+        }
+
+        // Create a hotspot element for a product
+        function createHotspot(product, index) {
+            const hotspot = document.createElement('div');
+            hotspot.className = 'hotspot';
+            hotspot.style.cssText = `
+                top: ${product.bbox.top}%;
+                left: ${product.bbox.left}%;
+                width: ${product.bbox.width}%;
+                height: ${product.bbox.height}%;
+            `;
+            hotspot.dataset.name = product.name;
+            hotspot.dataset.jp = product.nameJp || '';
+            hotspot.dataset.price = product.price;
+            hotspot.dataset.emoji = product.emoji || '🛒';
+            hotspot.dataset.index = index;
+
+            const buyLink = product.buyLink ? `<a href="${product.buyLink}" target="_blank" class="tooltip-buy" onclick="event.stopPropagation()">🛒 BUY</a>` : '';
+
+            hotspot.innerHTML = `
+                <div class="hotspot-tooltip">
+                    <div class="tooltip-name">${product.name}</div>
+                    <div class="tooltip-name-jp">${product.nameJp || ''}</div>
+                    <div class="tooltip-price">¥${product.price}</div>
+                    ${buyLink}
+                </div>
+            `;
+
+            return hotspot;
+        }
+
+        // Fallback products if API fails
+        function useFallbackProducts() {
+            const fallback = [
+                { name: "Salmon Onigiri", nameJp: "鮭おにぎり", price: 158, emoji: "🍙", bbox: { top: 20, left: 5, width: 10, height: 10 } },
+                { name: "Tuna Mayo Onigiri", nameJp: "ツナマヨ", price: 138, emoji: "🍙", bbox: { top: 20, left: 16, width: 10, height: 10 } },
+                { name: "Egg Sandwich", nameJp: "たまごサンド", price: 228, emoji: "🥪", bbox: { top: 12, left: 5, width: 15, height: 7 } },
+                { name: "Chicken Katsu Bento", nameJp: "チキンカツ弁当", price: 498, emoji: "🍱", bbox: { top: 50, left: 5, width: 18, height: 10 } },
+                { name: "Tonkatsu Bento", nameJp: "とんかつ弁当", price: 548, emoji: "🍱", bbox: { top: 50, left: 25, width: 18, height: 10 } },
+                { name: "Curry Rice", nameJp: "カレーライス", price: 498, emoji: "🍛", bbox: { top: 62, left: 5, width: 18, height: 10 } },
+                { name: "Green Tea", nameJp: "緑茶", price: 150, emoji: "🍵", bbox: { top: 3, left: 5, width: 10, height: 8 } },
+                { name: "Yakisoba", nameJp: "焼きそば", price: 398, emoji: "🍝", bbox: { top: 73, left: 5, width: 14, height: 8 } },
+            ];
+
+            const container = document.getElementById('hotspotsContainer');
+            container.innerHTML = '';
+            fallback.forEach((product, index) => {
+                const hotspot = createHotspot(product, index);
+                container.appendChild(hotspot);
+            });
+            detectedProducts = fallback;
+            attachHotspotHandlers();
+
+            // Add badge
+            const badge = document.createElement('div');
+            badge.className = 'products-badge';
+            badge.style.background = '#888';
+            badge.textContent = `${fallback.length} demo products`;
+            document.querySelector('.fridge-container').appendChild(badge);
+        }
+
+        // Attach click handlers to all hotspots
+        function attachHotspotHandlers() {
+            document.querySelectorAll('.hotspot').forEach(hotspot => {
+                hotspot.addEventListener('click', function(e) {
+                    const name = this.dataset.name;
+                    const jp = this.dataset.jp;
+                    const price = parseInt(this.dataset.price);
+                    const emoji = this.dataset.emoji;
+
+                    const rect = this.getBoundingClientRect();
+                    const x = rect.left + rect.width / 2;
+                    const y = rect.top;
+
+                    if (this.classList.contains('selected')) {
+                        const idx = basket.findIndex(i => i.name === name);
+                        if (idx > -1) basket.splice(idx, 1);
+                        this.classList.remove('selected');
+                        playSound('drop');
+                        createParticle(x, y, '❌');
+                    } else {
+                        basket.push({ name, jp, price, emoji });
+                        this.classList.add('selected');
+                        playSound('grab');
+                        createParticle(x, y, emoji);
+                        createScorePopup(x, y - 10, `+¥${price}`);
+
+                        document.body.classList.add('grabbing');
+                        setTimeout(() => document.body.classList.remove('grabbing'), 150);
+                    }
+                    updateUI();
+                });
+            });
+        }
+
+        // Start detection when page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            // Wait for image to load before detecting
+            const img = document.getElementById('fridgeImage');
+            if (img.complete) {
+                initProductDetection();
+            } else {
+                img.addEventListener('load', initProductDetection);
+            }
+        });
 
         // Sound effects
         function playSound(type) {
@@ -1108,38 +1099,6 @@
             setTimeout(() => p.remove(), 800);
         }
 
-        // Hotspot clicks
-        document.querySelectorAll('.hotspot').forEach(hotspot => {
-            hotspot.addEventListener('click', function(e) {
-                const name = this.dataset.name;
-                const jp = this.dataset.jp;
-                const price = parseInt(this.dataset.price);
-                const emoji = this.dataset.emoji;
-
-                const rect = this.getBoundingClientRect();
-                const x = rect.left + rect.width / 2;
-                const y = rect.top;
-
-                if (this.classList.contains('selected')) {
-                    const idx = basket.findIndex(i => i.name === name);
-                    if (idx > -1) basket.splice(idx, 1);
-                    this.classList.remove('selected');
-                    playSound('drop');
-                    createParticle(x, y, '❌');
-                } else {
-                    basket.push({ name, jp, price, emoji });
-                    this.classList.add('selected');
-                    playSound('grab');
-                    createParticle(x, y, emoji);
-                    createScorePopup(x, y - 10, `+¥${price}`);
-
-                    document.body.classList.add('grabbing');
-                    setTimeout(() => document.body.classList.remove('grabbing'), 150);
-                }
-                updateUI();
-            });
-        });
-
         // Update UI
         function updateUI() {
             const count = basket.length;
@@ -1170,13 +1129,62 @@
                 this.classList.add('active');
 
                 const view = this.dataset.view;
-                document.getElementById('fridge-view').style.display = view === 'fridge' ? 'flex' : 'none';
-                document.getElementById('store-view').classList.toggle('active', view === 'store');
-                document.getElementById('drinks-view').classList.toggle('active', view === 'drinks');
+                currentView = view;
+
+                // Clear basket when switching views
+                basket = [];
+                document.querySelectorAll('.hotspot').forEach(h => h.classList.remove('selected'));
+                updateUI();
+
+                // Remove existing products badge
+                const badge = document.querySelector('.products-badge');
+                if (badge) badge.remove();
+
+                // Load new view
+                initProductDetection(view);
             });
         });
 
-        // Receipt
+        // Stripe Checkout
+        async function handleCheckout() {
+            if (basket.length === 0) return;
+
+            try {
+                // Show loading state
+                const btn = document.querySelector('.checkout-btn');
+                const originalText = btn.textContent;
+                btn.textContent = 'Processing...';
+                btn.disabled = true;
+
+                const response = await fetch('/api/checkout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ items: basket })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    // Fallback to receipt modal if Stripe not configured
+                    console.log('Stripe not configured, showing receipt');
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+                    showReceipt();
+                    return;
+                }
+
+                // Redirect to Stripe checkout
+                if (data.url) {
+                    window.location.href = data.url;
+                }
+            } catch (error) {
+                console.error('Checkout error:', error);
+                // Fallback to receipt modal
+                showReceipt();
+            }
+        }
+
+        // Receipt (fallback when Stripe not configured)
         function showReceipt() {
             if (basket.length === 0) return;
             const subtotal = basket.reduce((s, i) => s + i.price, 0);
@@ -1191,6 +1199,39 @@
 
         function hideReceipt() {
             document.getElementById('receiptModal').classList.remove('visible');
+        }
+
+        // Go to Stripe checkout from receipt modal
+        async function goToStripeCheckout() {
+            if (basket.length === 0) return;
+
+            const btn = document.querySelector('.receipt-ship');
+            const originalText = btn.textContent;
+            btn.textContent = 'Redirecting to checkout...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/api/checkout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ items: basket })
+                });
+
+                const data = await response.json();
+
+                if (data.url) {
+                    window.location.href = data.url;
+                } else if (data.error) {
+                    alert('Checkout not available: ' + data.error);
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                console.error('Stripe checkout error:', error);
+                alert('Checkout failed. Please try again.');
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
         }
 
         document.getElementById('receiptModal').addEventListener('click', e => {
