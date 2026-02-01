@@ -61,6 +61,7 @@
                 <a href="#looking">Looking for</a>
                 <a href="#random">Random</a>
                 <div class="sub-nav" id="random-subnav">
+                    <a href="#checkout-projects">Checkout Projects</a>
                     <a href="#feedback">Feedback</a>
                     <a href="#other-people">Other People</a>
                     <a href="#loaded-words">Loaded Words</a>
@@ -337,6 +338,13 @@
                     </ul>
                 </div>
 
+                <div id="checkout-projects" class="section">
+                    <h3>Checkout Projects</h3>
+                    <ul>
+                        <li><strong>#42</strong> <a href="/konbini/" target="_blank">konbini simulator</a> - buy everything you want from a jap family mart to ur house</li>
+                    </ul>
+                </div>
+
                 <div id="feedback" class="section">
                     <h3>leave feedback and errata for me below</h3>
                     <div class="feedback-form" style="margin-top: 20px;">
@@ -541,7 +549,7 @@
 
                 // Show sub-nav for random section
                 const randomSubnav = document.getElementById('random-subnav');
-                if (sectionId === 'random' || ['feedback', 'other-people', 'loaded-words'].includes(sectionId)) {
+                if (sectionId === 'random' || ['checkout-projects', 'feedback', 'other-people', 'loaded-words'].includes(sectionId)) {
                     randomSubnav.classList.add('show');
                     document.querySelector('a[href="#random"]').classList.add('active');
                 } else {
