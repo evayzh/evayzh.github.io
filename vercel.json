@@ -1,4 +1,5 @@
 {
+  "outputDirectory": "docs",
   "rewrites": [
     {
       "source": "/:path*",
