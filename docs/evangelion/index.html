@@ -10,208 +10,197 @@
         body { display: flex; align-items: center; justify-content: center; }
         .shell {
             display: flex;
-            align-items: center;
-            gap: 0;
+            align-items: stretch;
             width: 100vw;
             height: 100vh;
         }
-        canvas.viz {
+        .terminal {
             flex: 1;
-            height: 100%;
-            display: block;
+            overflow: hidden;
+            padding: 8px 6px;
+            position: relative;
             min-width: 0;
         }
+        .terminal::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0,0,0,0.15) 2px,
+                rgba(0,0,0,0.15) 4px
+            );
+            pointer-events: none;
+        }
+        .term-inner {
+            font-size: 9px;
+            line-height: 1.5;
+            color: rgba(83, 234, 94, 0.6);
+            white-space: pre;
+            overflow: hidden;
+            height: 100%;
+        }
+        .term-inner .dim { color: rgba(83, 234, 94, 0.25); }
+        .term-inner .bright { color: rgba(83, 234, 94, 0.9); }
+        .term-inner .warn { color: rgba(255, 160, 40, 0.7); }
+        .term-inner .red { color: rgba(234, 50, 50, 0.7); }
+        .term-inner .cyan { color: rgba(0, 200, 200, 0.6); }
+        .term-inner .purple { color: rgba(180, 80, 220, 0.6); }
         .center {
             position: relative;
             flex: 0 0 auto;
-            width: min(70vw, 860px);
+            width: min(64vw, 820px);
+            display: flex;
+            align-items: center;
         }
         .frame {
-            border: 1px solid rgba(83, 234, 94, 0.15);
-            box-shadow: 0 0 40px rgba(83, 234, 94, 0.05), inset 0 0 30px rgba(0,0,0,0.8);
+            border: 1px solid rgba(83, 234, 94, 0.1);
+            box-shadow: 0 0 80px rgba(83, 234, 94, 0.02);
             position: relative;
+            width: 100%;
         }
         .frame::before, .frame::after {
             content: '';
             position: absolute;
-            width: 8px;
-            height: 8px;
-            border-color: rgba(83, 234, 94, 0.4);
+            width: 12px;
+            height: 12px;
+            border-color: rgba(83, 234, 94, 0.25);
             border-style: solid;
+            z-index: 2;
         }
         .frame::before { top: -1px; left: -1px; border-width: 1px 0 0 1px; }
         .frame::after { bottom: -1px; right: -1px; border-width: 0 1px 1px 0; }
         video { width: 100%; display: block; background: #000; }
-        .hud {
-            position: absolute;
-            bottom: 60px;
-            left: 12px;
-            color: rgba(83, 234, 94, 0.3);
-            font-size: 9px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            pointer-events: none;
-        }
     </style>
 </head>
 <body>
     <div class="shell">
-        <canvas class="viz" id="vizL"></canvas>
+        <div class="terminal" id="termL"><div class="term-inner" id="logL"></div></div>
         <div class="center">
             <div class="frame">
                 <video id="vid" controls preload="metadata">
                     <source src="https://github.com/evayzh/evayzh.github.io/releases/download/evangelion-v1/cruel-thesis-web.mp4" type="video/mp4">
                 </video>
-                <span class="hud">nerv // pattern blue</span>
             </div>
         </div>
-        <canvas class="viz" id="vizR"></canvas>
+        <div class="terminal" id="termR"><div class="term-inner" id="logR"></div></div>
     </div>
 
     <script>
-    const cL = document.getElementById('vizL');
-    const cR = document.getElementById('vizR');
-    const ctxL = cL.getContext('2d');
-    const ctxR = cR.getContext('2d');
+    const logL = document.getElementById('logL');
+    const logR = document.getElementById('logR');
+    let frame = 0;
 
-    let mode = 0, t = 0;
-    const MODES = 4;
-    const MODE_DURATION = 10;
+    const STATUS = [
+        '<span class="bright">NERV://MAGI.SYS</span>',
+        '<span class="dim">────────────────────</span>',
+        'CASPER   <span class="bright">[ONLINE]</span>',
+        'MELCHIOR <span class="bright">[ONLINE]</span>',
+        'BALTHASAR<span class="bright">[ONLINE]</span>',
+        '<span class="dim">────────────────────</span>',
+        '<span class="cyan">MAGI CONSENSUS: UNANIMOUS</span>',
+    ];
 
-    const GREEN  = [83, 234, 94];
-    const PURPLE = [168, 21, 168];
-    const ORANGE = [255, 121, 27];
-    const CYAN   = [0, 224, 224];
-    const colors = [GREEN, PURPLE, ORANGE, CYAN];
+    const LOGS_L = [
+        () => `<span class="dim">[${ts()}]</span> FRAME ${pad(frame, 5)}/${pad(4590, 5)}`,
+        () => `<span class="dim">[${ts()}]</span> render: pass ${rng(1,4)}/4`,
+        () => `<span class="dim">[${ts()}]</span> optical_flow: ${rng(40,92)} pts tracked`,
+        () => `<span class="dim">[${ts()}]</span> shi_tomasi: ${rng(60,80)} corners`,
+        () => `<span class="dim">[${ts()}]</span> canny_edge: threshold ${rng(50,120)}`,
+        () => `<span class="dim">[${ts()}]</span> <span class="cyan">sync_ratio: ${(Math.random()*20+80).toFixed(1)}%</span>`,
+        () => `<span class="dim">[${ts()}]</span> <span class="purple">at_field: ACTIVE</span>`,
+        () => `<span class="dim">[${ts()}]</span> lcl_density: ${(Math.random()*0.3+0.7).toFixed(3)}`,
+        () => `<span class="dim">[${ts()}]</span> ego_barrier: STABLE`,
+        () => `<span class="dim">[${ts()}]</span> pattern: <span class="bright">BLUE</span>`,
+        () => `<span class="dim">[${ts()}]</span> signal_noise: ${(Math.random()*5).toFixed(2)}dB`,
+        () => `<span class="dim">[${ts()}]</span> eva_unit_01: <span class="bright">READY</span>`,
+        () => `<span class="dim">[${ts()}]</span> pilot_status: NOMINAL`,
+        () => `<span class="dim">[${ts()}]</span> umbilical: CONNECTED`,
+        () => `<span class="dim">[${ts()}]</span> <span class="warn">WARN: sync drift +${(Math.random()*2).toFixed(1)}%</span>`,
+        () => `<span class="dim">[${ts()}]</span> buffer: ${rng(85,99)}% utilized`,
+        () => `<span class="dim">[${ts()}]</span> encoding: h264 crf=${rng(16,22)}`,
+        () => `<span class="dim">[${ts()}]</span> bitrate: ${rng(1800,3200)}kbps`,
+        () => `<span class="dim">[${ts()}]</span> processing: opencv ${rng(35,48)}.${rng(0,9)} fps`,
+        () => `<span class="dim">[${ts()}]</span> <span class="red">ALERT: berserker threshold ${rng(1,8)}%</span>`,
+    ];
 
-    function resize() {
-        cL.width = cL.clientWidth * devicePixelRatio;
-        cL.height = cL.clientHeight * devicePixelRatio;
-        cR.width = cR.clientWidth * devicePixelRatio;
-        cR.height = cR.clientHeight * devicePixelRatio;
+    const LOGS_R = [
+        () => `<span class="dim">${ts()}</span> RENDERING [${'█'.repeat(Math.floor(frame/4590*16))}${'░'.repeat(16-Math.floor(frame/4590*16))}] ${(frame/4590*100).toFixed(1)}%`,
+        () => `<span class="dim">${ts()}</span> tracking_pt[${pad(rng(0,79),2)}] (${pad(rng(0,1920),4)},${pad(rng(0,1080),4)})`,
+        () => `<span class="dim">${ts()}</span> tracking_pt[${pad(rng(0,79),2)}] (${pad(rng(0,1920),4)},${pad(rng(0,1080),4)})`,
+        () => `<span class="dim">${ts()}</span> <span class="purple">hud_overlay: NERV.ACTIVE</span>`,
+        () => `<span class="dim">${ts()}</span> crosshair_draw: ${rng(8,24)} targets`,
+        () => `<span class="dim">${ts()}</span> trail_length: ${rng(20,40)} frames`,
+        () => `<span class="dim">${ts()}</span> <span class="cyan">connection_lines: ${rng(30,120)}</span>`,
+        () => `<span class="dim">${ts()}</span> edge_pixels: ${rng(8000,32000)}`,
+        () => `<span class="dim">${ts()}</span> grid_overlay: 1920x1080`,
+        () => `<span class="dim">${ts()}</span> color_map: EVA_UNIT_01`,
+        () => `<span class="dim">${ts()}</span> coord_labels: ${rng(20,60)} drawn`,
+        () => `<span class="dim">${ts()}</span> mem: ${rng(280,420)}MB / 1024MB`,
+        () => `<span class="dim">${ts()}</span> gpu_temp: ${rng(58,72)}°C`,
+        () => `<span class="dim">${ts()}</span> <span class="warn">queue: ${rng(0,3)} pending</span>`,
+        () => `<span class="dim">${ts()}</span> output: 1920x1080@30fps`,
+        () => `<span class="dim">${ts()}</span> eta: ${Math.max(0, Math.floor((4590-frame)/38))}s`,
+        () => `<span class="dim">${ts()}</span> magi_vote: <span class="bright">PROCEED</span>`,
+        () => `<span class="dim">${ts()}</span> target: <span class="red">ANGEL DETECTED</span>`,
+    ];
+
+    function ts() {
+        const s = Math.floor(frame / 30);
+        const m = Math.floor(s / 60);
+        return `${pad(m,2)}:${pad(s%60,2)}:${pad(frame%30,2)}`;
     }
-    window.addEventListener('resize', resize);
-    resize();
+    function pad(n, w) { return String(n).padStart(w, '0'); }
+    function rng(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
 
-    function rgba(c, a) { return `rgba(${c[0]},${c[1]},${c[2]},${a})`; }
+    const MAX_LINES = 200;
+    let linesL = [], linesR = [];
 
-    // mode 0: scanning lines
-    function drawScan(ctx, w, h, flip) {
-        const lines = 40;
-        const lineH = h / lines;
-        for (let i = 0; i < lines; i++) {
-            const wave = Math.sin(t * 0.02 + i * 0.3) * 0.5 + 0.5;
-            const pulse = Math.sin(t * 0.05 + i * 0.15) * 0.3 + 0.4;
-            const barW = wave * pulse * w * 0.7;
-            const c = colors[i % colors.length];
-            ctx.fillStyle = rgba(c, pulse * 0.4);
-            const x = flip ? w - barW : 0;
-            ctx.fillRect(x, i * lineH, barW, lineH - 1);
-        }
-        // sweep line
-        const sweepY = ((t * 2) % h);
-        ctx.fillStyle = rgba(GREEN, 0.15);
-        ctx.fillRect(0, sweepY, w, 2);
+    // init with status block on left
+    STATUS.forEach(s => linesL.push(s));
+    linesL.push('');
+    linesL.push('<span class="bright">>>> INITIALIZING TRACKER</span>');
+    linesL.push('<span class="dim">────────────────────</span>');
+    linesL.push('');
+
+    linesR.push('<span class="bright">OXIS//EVANGELION TRACKER v1.0</span>');
+    linesR.push('<span class="dim">═══════════════════════════</span>');
+    linesR.push('input: cruel-thesis-rendered.mp4');
+    linesR.push('res: 1920x1080 @ 30fps');
+    linesR.push('frames: 4590 (153.0s)');
+    linesR.push('<span class="dim">═══════════════════════════</span>');
+    linesR.push('');
+
+    function addLine(arr, el, line) {
+        arr.push(line);
+        if (arr.length > MAX_LINES) arr.shift();
+        el.innerHTML = arr.join('\n');
+        el.scrollTop = el.scrollHeight;
     }
 
-    // mode 1: waveform
-    function drawWave(ctx, w, h, flip) {
-        const points = 64;
-        ctx.beginPath();
-        ctx.strokeStyle = rgba(GREEN, 0.4);
-        ctx.lineWidth = 1.5 * devicePixelRatio;
-        for (let i = 0; i < points; i++) {
-            const frac = i / points;
-            const y = h * 0.5 + Math.sin(t * 0.03 + frac * 12) * h * 0.25
-                     + Math.sin(t * 0.07 + frac * 5) * h * 0.1;
-            const x = flip ? w - frac * w : frac * w;
-            if (i === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-        }
-        ctx.stroke();
-        ctx.strokeStyle = rgba(GREEN, 0.1);
-        ctx.lineWidth = 6 * devicePixelRatio;
-        ctx.stroke();
-    }
+    function tick() {
+        frame = (frame + 1) % 4591;
 
-    // mode 2: scrolling grid
-    let scrollY = 0;
-    function drawGrid(ctx, w, h, flip) {
-        scrollY += 0.8;
-        const cols = 16, rows = 30;
-        const cw = w / cols, rh = h / rows;
-        for (let i = 0; i < cols; i++) {
-            for (let j = 0; j < rows; j++) {
-                const off = (j + scrollY * 0.05) % rows;
-                const fade = 1 - off / rows;
-                const pulse = Math.sin(t * 0.04 + i * 0.5 + j * 0.2) * 0.5 + 0.5;
-                const a = fade * pulse * 0.5;
-                if (a < 0.03) continue;
-                const c = colors[(i + Math.floor(t / 80)) % colors.length];
-                ctx.fillStyle = rgba(c, a);
-                const x = flip ? w - (i + 1) * cw : i * cw;
-                ctx.fillRect(x + 1, j * rh + 1, cw - 2, rh - 2);
-            }
+        // left terminal: ~3 lines per second
+        if (Math.random() < 0.05) {
+            const gen = LOGS_L[Math.floor(Math.random() * LOGS_L.length)];
+            addLine(linesL, logL, gen());
         }
-    }
 
-    // mode 3: drifting particles
-    let particles = [];
-    function drawParticles(ctx, w, h) {
-        if (particles.length < 80 && Math.random() < 0.3) {
-            particles.push({
-                x: Math.random() * w,
-                y: h + 4,
-                vx: (Math.random() - 0.5) * 1.5,
-                vy: -0.5 - Math.random() * 2,
-                life: 1,
-                c: colors[Math.floor(Math.random() * colors.length)]
-            });
-        }
-        for (let i = particles.length - 1; i >= 0; i--) {
-            const p = particles[i];
-            p.x += p.vx + Math.sin(t * 0.02 + p.y * 0.01) * 0.3;
-            p.y += p.vy;
-            p.life -= 0.005;
-            if (p.life <= 0 || p.y < -10) { particles.splice(i, 1); continue; }
-            ctx.fillStyle = rgba(p.c, p.life * 0.5);
-            const s = p.life * 3 * devicePixelRatio;
-            ctx.fillRect(p.x, p.y, s, s);
-            // trail
-            ctx.fillStyle = rgba(p.c, p.life * 0.15);
-            ctx.fillRect(p.x, p.y, 1, 8);
+        // right terminal: ~4 lines per second
+        if (Math.random() < 0.065) {
+            const gen = LOGS_R[Math.floor(Math.random() * LOGS_R.length)];
+            addLine(linesR, logR, gen());
         }
     }
 
-    function draw() {
-        requestAnimationFrame(draw);
-        t++;
+    // initial render
+    logL.innerHTML = linesL.join('\n');
+    logR.innerHTML = linesR.join('\n');
 
-        const wL = cL.width, hL = cL.height;
-        const wR = cR.width, hR = cR.height;
-
-        ctxL.fillStyle = 'rgba(0,0,0,0.12)';
-        ctxL.fillRect(0, 0, wL, hL);
-        ctxR.fillStyle = 'rgba(0,0,0,0.12)';
-        ctxR.fillRect(0, 0, wR, hR);
-
-        if (t % (MODE_DURATION * 60) === 0) {
-            mode = (mode + 1) % MODES;
-            ctxL.fillStyle = '#000';
-            ctxL.fillRect(0, 0, wL, hL);
-            ctxR.fillStyle = '#000';
-            ctxR.fillRect(0, 0, wR, hR);
-            particles = [];
-        }
-
-        switch (mode) {
-            case 0: drawScan(ctxL, wL, hL, false); drawScan(ctxR, wR, hR, true); break;
-            case 1: drawWave(ctxL, wL, hL, false); drawWave(ctxR, wR, hR, true); break;
-            case 2: drawGrid(ctxL, wL, hL, false); drawGrid(ctxR, wR, hR, true); break;
-            case 3: drawParticles(ctxL, wL, hL); drawParticles(ctxR, wR, hR); break;
-        }
-    }
-    draw();
+    setInterval(tick, 1000 / 60);
     </script>
 </body>
 </html>
