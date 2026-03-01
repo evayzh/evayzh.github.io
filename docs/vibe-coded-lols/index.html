@@ -3,80 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>vibe coded lols - Eva Zhang</title>
-    <meta name="description" content="vibe coded experiments and visual projects">
-    <link rel="stylesheet" type="text/css" href="../css/index.css">
+    <title>vibe coded lols</title>
     <style>
-        .video-container {
-            margin: 20px 0;
-            border-radius: 8px;
-            overflow: hidden;
-            background: #000;
-        }
-        .video-container video {
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #000; }
+        .video-wrap {
             width: 100%;
+            max-width: 960px;
+            margin: 0 auto;
+            padding-top: 40px;
+        }
+        .video-wrap iframe {
+            width: 100%;
+            aspect-ratio: 16/9;
+            border: 0;
             display: block;
-        }
-        .project-card {
-            margin-bottom: 40px;
-        }
-        .project-card h3 {
-            margin-bottom: 4px;
-        }
-        .project-card .meta {
-            color: #888;
-            font-size: 13px;
-            margin-bottom: 12px;
-        }
-        .project-card .description {
-            color: #444;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-        .tag {
-            display: inline-block;
-            font-size: 11px;
-            color: #666;
-            background: #f0f0f0;
-            padding: 2px 8px;
-            border-radius: 10px;
-            margin-right: 4px;
-        }
-        a.back {
-            color: #888;
-            text-decoration: none;
-            font-size: 14px;
-        }
-        a.back:hover {
-            color: #000;
         }
     </style>
 </head>
 <body>
-    <div id="maincontent">
-        <p><a class="back" href="../">&larr; back</a></p>
-        <h1>vibe coded lols</h1>
-        <p style="color: #666; font-size: 14px;">things i made with code for fun</p>
-
-        <div class="project-card">
-            <h3>the cruel angel thesis viz (raw footage #1)</h3>
-            <div class="video-container" style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-                <iframe style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;"
-                    src="https://www.youtube.com/embed/K5qImvKFtLY"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowfullscreen></iframe>
-            </div>
-        </div>
-
-        <div class="project-card">
-            <h3>the cruel angel thesis viz (rendered #2)</h3>
-            <div class="video-container" style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-                <iframe style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;"
-                    src="https://www.youtube.com/embed/8PC7VefQCb8"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowfullscreen></iframe>
-            </div>
-        </div>
+    <div class="video-wrap">
+        <iframe src="https://www.youtube.com/embed/K5qImvKFtLY"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen></iframe>
     </div>
 </body>
 </html>
