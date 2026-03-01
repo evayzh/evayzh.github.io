@@ -52,28 +52,6 @@
             text-transform: uppercase;
             pointer-events: none;
         }
-        .prompt {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: rgba(83, 234, 94, 0.6);
-            font-size: 11px;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            cursor: pointer;
-            padding: 12px 24px;
-            border: 1px solid rgba(83, 234, 94, 0.2);
-            transition: all 0.3s;
-            z-index: 10;
-            pointer-events: auto;
-        }
-        .prompt:hover {
-            color: rgba(83, 234, 94, 0.9);
-            border-color: rgba(83, 234, 94, 0.5);
-            box-shadow: 0 0 20px rgba(83, 234, 94, 0.1);
-        }
-        .prompt.hidden { display: none; }
     </style>
 </head>
 <body>
@@ -81,10 +59,9 @@
         <canvas class="viz" id="vizL"></canvas>
         <div class="center">
             <div class="frame">
-                <video id="vid" crossorigin="anonymous" preload="metadata">
+                <video id="vid" controls preload="metadata">
                     <source src="https://github.com/evayzh/evayzh.github.io/releases/download/evangelion-v1/cruel-thesis-web.mp4" type="video/mp4">
                 </video>
-                <div id="startBtn" class="prompt">initialize</div>
                 <span class="hud">nerv // pattern blue</span>
             </div>
         </div>
@@ -92,20 +69,15 @@
     </div>
 
     <script>
-    const vid = document.getElementById('vid');
-    const btn = document.getElementById('startBtn');
     const cL = document.getElementById('vizL');
     const cR = document.getElementById('vizR');
     const ctxL = cL.getContext('2d');
     const ctxR = cR.getContext('2d');
 
-    let analyser, dataArray, audioCtx;
-    let mode = 0;
-    let modeTimer = 0;
+    let mode = 0, t = 0;
     const MODES = 4;
-    const MODE_DURATION = 8; // seconds per mode
+    const MODE_DURATION = 10;
 
-    // eva palette
     const GREEN  = [83, 234, 94];
     const PURPLE = [168, 21, 168];
     const ORANGE = [255, 121, 27];
@@ -121,129 +93,110 @@
     window.addEventListener('resize', resize);
     resize();
 
-    btn.addEventListener('click', () => {
-        btn.classList.add('hidden');
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 256;
-        const src = audioCtx.createMediaElementSource(vid);
-        src.connect(analyser);
-        analyser.connect(audioCtx.destination);
-        dataArray = new Uint8Array(analyser.frequencyBinCount);
-        vid.controls = true;
-        vid.play();
-        draw();
-    });
-
-    function lerp(a, b, t) { return a + (b - a) * t; }
-
     function rgba(c, a) { return `rgba(${c[0]},${c[1]},${c[2]},${a})`; }
 
-    function drawBars(ctx, w, h, flip) {
-        const bars = 32;
-        const barH = h / bars;
-        for (let i = 0; i < bars; i++) {
-            const d = dataArray[Math.floor(i * dataArray.length / bars)] / 255;
-            const barW = d * w * 0.8;
+    // mode 0: scanning lines
+    function drawScan(ctx, w, h, flip) {
+        const lines = 40;
+        const lineH = h / lines;
+        for (let i = 0; i < lines; i++) {
+            const wave = Math.sin(t * 0.02 + i * 0.3) * 0.5 + 0.5;
+            const pulse = Math.sin(t * 0.05 + i * 0.15) * 0.3 + 0.4;
+            const barW = wave * pulse * w * 0.7;
             const c = colors[i % colors.length];
-            ctx.fillStyle = rgba(c, d * 0.7 + 0.05);
-            const y = i * barH;
-            if (flip) {
-                ctx.fillRect(w - barW, y, barW, barH - 1);
-            } else {
-                ctx.fillRect(0, y, barW, barH - 1);
-            }
+            ctx.fillStyle = rgba(c, pulse * 0.4);
+            const x = flip ? w - barW : 0;
+            ctx.fillRect(x, i * lineH, barW, lineH - 1);
         }
+        // sweep line
+        const sweepY = ((t * 2) % h);
+        ctx.fillStyle = rgba(GREEN, 0.15);
+        ctx.fillRect(0, sweepY, w, 2);
     }
 
+    // mode 1: waveform
     function drawWave(ctx, w, h, flip) {
-        const sliceW = w / dataArray.length;
+        const points = 64;
         ctx.beginPath();
-        ctx.strokeStyle = rgba(GREEN, 0.5);
+        ctx.strokeStyle = rgba(GREEN, 0.4);
         ctx.lineWidth = 1.5 * devicePixelRatio;
-        for (let i = 0; i < dataArray.length; i++) {
-            const v = dataArray[i] / 255;
-            const y = h * 0.5 + (v - 0.5) * h * 0.8;
-            const x = flip ? w - i * sliceW : i * sliceW;
+        for (let i = 0; i < points; i++) {
+            const frac = i / points;
+            const y = h * 0.5 + Math.sin(t * 0.03 + frac * 12) * h * 0.25
+                     + Math.sin(t * 0.07 + frac * 5) * h * 0.1;
+            const x = flip ? w - frac * w : frac * w;
             if (i === 0) ctx.moveTo(x, y);
             else ctx.lineTo(x, y);
         }
         ctx.stroke();
-        // glow
-        ctx.strokeStyle = rgba(GREEN, 0.15);
-        ctx.lineWidth = 4 * devicePixelRatio;
+        ctx.strokeStyle = rgba(GREEN, 0.1);
+        ctx.lineWidth = 6 * devicePixelRatio;
         ctx.stroke();
     }
 
-    let scrollOffset = 0;
-    function drawScroll(ctx, w, h, flip) {
-        const cols = 24;
-        const colW = w / cols;
-        scrollOffset += 0.5;
+    // mode 2: scrolling grid
+    let scrollY = 0;
+    function drawGrid(ctx, w, h, flip) {
+        scrollY += 0.8;
+        const cols = 16, rows = 30;
+        const cw = w / cols, rh = h / rows;
         for (let i = 0; i < cols; i++) {
-            const d = dataArray[Math.floor(i * dataArray.length / cols)] / 255;
-            const segments = 20;
-            const segH = h / segments;
-            for (let j = 0; j < segments; j++) {
-                const yOff = (j + scrollOffset * 0.1) % segments;
-                const fade = 1 - yOff / segments;
-                const a = d * fade * 0.6;
-                if (a < 0.02) continue;
-                const c = colors[(i + Math.floor(scrollOffset / 30)) % colors.length];
+            for (let j = 0; j < rows; j++) {
+                const off = (j + scrollY * 0.05) % rows;
+                const fade = 1 - off / rows;
+                const pulse = Math.sin(t * 0.04 + i * 0.5 + j * 0.2) * 0.5 + 0.5;
+                const a = fade * pulse * 0.5;
+                if (a < 0.03) continue;
+                const c = colors[(i + Math.floor(t / 80)) % colors.length];
                 ctx.fillStyle = rgba(c, a);
-                const x = flip ? w - (i + 1) * colW : i * colW;
-                ctx.fillRect(x, j * segH, colW - 1, segH - 1);
+                const x = flip ? w - (i + 1) * cw : i * cw;
+                ctx.fillRect(x + 1, j * rh + 1, cw - 2, rh - 2);
             }
         }
     }
 
+    // mode 3: drifting particles
     let particles = [];
     function drawParticles(ctx, w, h) {
-        const avg = dataArray.reduce((a, b) => a + b, 0) / dataArray.length / 255;
-        // spawn
-        if (avg > 0.15 && particles.length < 120) {
-            const c = colors[Math.floor(Math.random() * colors.length)];
+        if (particles.length < 80 && Math.random() < 0.3) {
             particles.push({
                 x: Math.random() * w,
-                y: h + 2,
-                vx: (Math.random() - 0.5) * 2,
-                vy: -1 - Math.random() * 3 * avg,
+                y: h + 4,
+                vx: (Math.random() - 0.5) * 1.5,
+                vy: -0.5 - Math.random() * 2,
                 life: 1,
-                c: c
+                c: colors[Math.floor(Math.random() * colors.length)]
             });
         }
         for (let i = particles.length - 1; i >= 0; i--) {
             const p = particles[i];
-            p.x += p.vx;
+            p.x += p.vx + Math.sin(t * 0.02 + p.y * 0.01) * 0.3;
             p.y += p.vy;
-            p.life -= 0.008;
-            if (p.life <= 0) { particles.splice(i, 1); continue; }
-            ctx.fillStyle = rgba(p.c, p.life * 0.6);
+            p.life -= 0.005;
+            if (p.life <= 0 || p.y < -10) { particles.splice(i, 1); continue; }
+            ctx.fillStyle = rgba(p.c, p.life * 0.5);
             const s = p.life * 3 * devicePixelRatio;
-            ctx.fillRect(p.x - s/2, p.y - s/2, s, s);
+            ctx.fillRect(p.x, p.y, s, s);
+            // trail
+            ctx.fillStyle = rgba(p.c, p.life * 0.15);
+            ctx.fillRect(p.x, p.y, 1, 8);
         }
     }
 
     function draw() {
         requestAnimationFrame(draw);
-        if (!analyser) return;
-        analyser.getByteFrequencyData(dataArray);
+        t++;
 
         const wL = cL.width, hL = cL.height;
         const wR = cR.width, hR = cR.height;
 
-        // fade trail
-        ctxL.fillStyle = 'rgba(0,0,0,0.15)';
+        ctxL.fillStyle = 'rgba(0,0,0,0.12)';
         ctxL.fillRect(0, 0, wL, hL);
-        ctxR.fillStyle = 'rgba(0,0,0,0.15)';
+        ctxR.fillStyle = 'rgba(0,0,0,0.12)';
         ctxR.fillRect(0, 0, wR, hR);
 
-        // cycle modes
-        modeTimer += 1/60;
-        if (modeTimer > MODE_DURATION) {
-            modeTimer = 0;
+        if (t % (MODE_DURATION * 60) === 0) {
             mode = (mode + 1) % MODES;
-            // hard clear on mode switch
             ctxL.fillStyle = '#000';
             ctxL.fillRect(0, 0, wL, hL);
             ctxR.fillStyle = '#000';
@@ -252,12 +205,13 @@
         }
 
         switch (mode) {
-            case 0: drawBars(ctxL, wL, hL, false); drawBars(ctxR, wR, hR, true); break;
+            case 0: drawScan(ctxL, wL, hL, false); drawScan(ctxR, wR, hR, true); break;
             case 1: drawWave(ctxL, wL, hL, false); drawWave(ctxR, wR, hR, true); break;
-            case 2: drawScroll(ctxL, wL, hL, false); drawScroll(ctxR, wR, hR, true); break;
+            case 2: drawGrid(ctxL, wL, hL, false); drawGrid(ctxR, wR, hR, true); break;
             case 3: drawParticles(ctxL, wL, hL); drawParticles(ctxR, wR, hR); break;
         }
     }
+    draw();
     </script>
 </body>
 </html>
