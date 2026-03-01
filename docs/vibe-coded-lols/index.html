@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>vibe coded lols - Eva Zhang</title>
+    <meta name="description" content="vibe coded experiments and visual projects">
+    <link rel="stylesheet" type="text/css" href="../css/index.css">
+    <style>
+        .video-container {
+            margin: 20px 0;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #000;
+        }
+        .video-container video {
+            width: 100%;
+            display: block;
+        }
+        .project-card {
+            margin-bottom: 40px;
+        }
+        .project-card h3 {
+            margin-bottom: 4px;
+        }
+        .project-card .meta {
+            color: #888;
+            font-size: 13px;
+            margin-bottom: 12px;
+        }
+        .project-card .description {
+            color: #444;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .tag {
+            display: inline-block;
+            font-size: 11px;
+            color: #666;
+            background: #f0f0f0;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-right: 4px;
+        }
+        a.back {
+            color: #888;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        a.back:hover {
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+    <div id="maincontent">
+        <p><a class="back" href="../">&larr; back</a></p>
+        <h1>vibe coded lols</h1>
+        <p style="color: #666; font-size: 14px;">things i made with code for fun</p>
+
+        <div class="project-card">
+            <h3>oxis-style evangelion visualizer</h3>
+            <div class="meta">
+                <span class="tag">python</span>
+                <span class="tag">opencv</span>
+                <span class="tag">computer vision</span>
+                <span class="tag">evangelion</span>
+            </div>
+            <div class="video-container">
+                <video controls preload="metadata" poster="thumbnail.jpg">
+                    <source src="oxis-eva-visualizer.mp4" type="video/mp4">
+                </video>
+            </div>
+            <div class="description">
+                <p>real-time computer vision overlays on evangelion footage, inspired by
+                <a href="https://www.instagram.com/itsvalentinacy/" target="_blank">oxis</a>'s
+                visual style. uses shi-tomasi corner detection, lucas-kanade optical flow tracking,
+                and canny edge detection to generate tracking lines, coordinate readouts, and
+                nerv-themed hud overlays. paired with the cruel angel's thesis.</p>
+                <p>the oxis technique: detect feature points in each frame, track them across frames
+                with optical flow, then draw crosshairs, coordinate labels, motion trails, and
+                connection lines between nearby points. all in the eva unit-01 color palette.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
