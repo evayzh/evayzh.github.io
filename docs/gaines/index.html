@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>gaines number trees</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; overflow: hidden; }
+    </style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+/*
+  Charles Gaines' actual system:
+  - Photograph a tree, draw a grid over it
+  - Number the cells where the tree silhouette falls
+  - Numbers start at 0 at the center of the trunk, counting outward left AND right
+  - Each row is numbered independently from the trunk center outward
+  - Transfer numbered cells to a blank grid, fill with color
+  - Each successive tree is layered on top of previous ones
+  - Each tree gets its own distinctive color
+  - The NUMBERS are the image
+*/
+
+function mulberry32(a) {
+  return function () {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    var t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+var GRID = 52;
+var COLORS = ["#2563EB","#DC2626","#16A34A","#F59E0B","#8B5CF6","#EC4899","#0D9488","#EA580C"];
+var COLOR_NAMES = ["Blue","Red","Green","Amber","Violet","Pink","Teal","Orange"];
+
+function generateTree(seed) {
+  var rng = mulberry32(seed);
+  var cells = new Set();
+  var trunkX = Math.floor(GRID / 2) + Math.floor((rng() - 0.5) * 6);
+  var trunkBottom = GRID - 2;
+  var trunkTop = Math.floor(GRID * 0.32) + Math.floor(rng() * 6);
+  var trunkWidth = Math.floor(rng() * 2);
+  var rowCenters = new Map();
+
+  for (var y = trunkBottom; y >= trunkTop; y--) {
+    rowCenters.set(y, trunkX);
+    for (var dx = -trunkWidth; dx <= trunkWidth; dx++) {
+      var x = trunkX + dx;
+      if (x >= 0 && x < GRID) cells.add(x + "," + y);
+    }
+  }
+
+  function growBranch(x, y, angle, length, thickness, depth) {
+    if (depth > 7 || length < 1.5) return;
+    var steps = Math.floor(length);
+    for (var i = 0; i < steps; i++) {
+      var nx = Math.round(x + Math.cos(angle) * i);
+      var ny = Math.round(y + Math.sin(angle) * i);
+      if (nx >= 0 && nx < GRID && ny >= 0 && ny < GRID) {
+        cells.add(nx + "," + ny);
+        if (!rowCenters.has(ny)) rowCenters.set(ny, trunkX);
+        for (var t = 1; t <= thickness; t++) {
+          if (nx + t < GRID) cells.add((nx + t) + "," + ny);
+          if (nx - t >= 0) cells.add((nx - t) + "," + ny);
+        }
+      }
+    }
+    var endX = x + Math.cos(angle) * steps;
+    var endY = y + Math.sin(angle) * steps;
+    var a1 = angle - 0.25 - rng() * 0.45;
+    var a2 = angle + 0.25 + rng() * 0.45;
+    var nl = length * (0.55 + rng() * 0.2);
+    growBranch(endX, endY, a1, nl, Math.max(0, thickness - 1), depth + 1);
+    growBranch(endX, endY, a2, nl, Math.max(0, thickness - 1), depth + 1);
+    if (rng() > 0.55) {
+      growBranch(endX, endY, angle + (rng() - 0.5) * 0.7, nl * 0.65, 0, depth + 1);
+    }
+  }
+
+  var numBranches = 3 + Math.floor(rng() * 3);
+  for (var i = 0; i < numBranches; i++) {
+    var bAngle = -Math.PI / 2 + (rng() - 0.5) * 1.3;
+    var bLen = GRID * (0.12 + rng() * 0.14);
+    var startY = trunkTop + Math.floor(rng() * (trunkBottom - trunkTop) * 0.25);
+    growBranch(trunkX, startY, bAngle, bLen, 1, 0);
+  }
+
+  var clusters = 5 + Math.floor(rng() * 8);
+  for (var c = 0; c < clusters; c++) {
+    var cx = trunkX + (rng() - 0.5) * GRID * 0.55;
+    var cy = trunkTop - rng() * GRID * 0.1 + rng() * (trunkBottom - trunkTop) * 0.15;
+    var r = 2 + rng() * 4.5;
+    for (var ddy = -r; ddy <= r; ddy++) {
+      for (var ddx = -r; ddx <= r; ddx++) {
+        if (ddx * ddx + ddy * ddy <= r * r * (0.4 + rng() * 0.5)) {
+          var px = Math.round(cx + ddx);
+          var py = Math.round(cy + ddy);
+          if (px >= 0 && px < GRID && py >= 0 && py < GRID && rng() > 0.2) {
+            cells.add(px + "," + py);
+            if (!rowCenters.has(py)) rowCenters.set(py, trunkX);
+          }
+        }
+      }
+    }
+  }
+
+  for (var yy = 0; yy < GRID; yy++) {
+    if (!rowCenters.has(yy)) rowCenters.set(yy, trunkX);
+  }
+  return { cells: cells, rowCenters: rowCenters, trunkX: trunkX };
+}
+
+function getCellNumber(x, y, rowCenters) {
+  var center = rowCenters.has(y) ? rowCenters.get(y) : Math.floor(GRID / 2);
+  return Math.abs(x - center);
+}
+
+// --- State ---
+var activeTrees = 1;
+var showGrid = true;
+var isAnimating = false;
+var animFrame = null;
+var mouseOffset = { x: 0, y: 0 };
+var hoveredCell = null;
+
+var seeds = [2137, 3891, 5023, 6741, 8117, 9453, 1287, 4569];
+var trees = seeds.map(function(s) { return generateTree(s); });
+
+function drawScene(numTrees, partialAlpha, partialIdx) {
+  if (numTrees === undefined) numTrees = activeTrees;
+  if (partialAlpha === undefined) partialAlpha = 1;
+  if (partialIdx === undefined) partialIdx = -1;
+
+  var canvas = document.getElementById("mainCanvas");
+  if (!canvas) return;
+  var ctx = canvas.getContext("2d");
+  var dpr = window.devicePixelRatio || 1;
+  var rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+  var w = rect.width;
+  var h = rect.height;
+
+  ctx.fillStyle = "#FAF9F6";
+  ctx.fillRect(0, 0, w, h);
+
+  var pad = 44;
+  var side = Math.min(w - pad * 2, h - pad * 2);
+  var ox = (w - side) / 2;
+  var oy = (h - side) / 2;
+  var cellW = side / GRID;
+  var cellH = side / GRID;
+  var mx = mouseOffset.x * 2.5;
+  var my = mouseOffset.y * 2.5;
+
+  if (showGrid) {
+    ctx.strokeStyle = "rgba(0,0,0,0.045)";
+    ctx.lineWidth = 0.5;
+    for (var i = 0; i <= GRID; i++) {
+      ctx.beginPath(); ctx.moveTo(ox + i * cellW, oy); ctx.lineTo(ox + i * cellW, oy + side); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(ox, oy + i * cellH); ctx.lineTo(ox + side, oy + i * cellH); ctx.stroke();
+    }
+  }
+
+  ctx.fillStyle = "rgba(0,0,0,0.18)";
+  ctx.font = Math.max(6, cellW * 0.48) + 'px "Menlo","SF Mono",monospace';
+  ctx.textAlign = "right";
+  ctx.textBaseline = "middle";
+  for (var y = 0; y < GRID; y += 2) {
+    ctx.fillText(y.toString(), ox - 5, oy + y * cellH + cellH / 2);
+  }
+  ctx.textAlign = "center";
+  for (var x = 0; x < GRID; x += 4) {
+    ctx.fillText(x.toString(), ox + x * cellW + cellW / 2, oy - 7);
+  }
+
+  for (var t = 0; t < numTrees; t++) {
+    var tree = trees[t];
+    var color = COLORS[t % COLORS.length];
+    var isNewest = t === numTrees - 1;
+    var isPartial = t === partialIdx;
+    var alpha = isPartial ? partialAlpha : 1;
+    var layerDepth = isNewest ? 0 : (numTrees - 1 - t) * 0.35;
+    var lx = mx * layerDepth;
+    var ly = my * layerDepth;
+
+    tree.cells.forEach(function(key) {
+      var parts = key.split(",");
+      var gx = parseInt(parts[0]);
+      var gy = parseInt(parts[1]);
+      var num = getCellNumber(gx, gy, tree.rowCenters);
+      var px = ox + gx * cellW + lx;
+      var py = oy + gy * cellH + ly;
+
+      ctx.globalAlpha = alpha * (isNewest ? 0.88 : 0.72);
+      ctx.fillStyle = color;
+      ctx.fillRect(px + 0.5, py + 0.5, cellW - 1, cellH - 1);
+
+      if (cellW > 4.5) {
+        ctx.globalAlpha = alpha * (isNewest ? 0.92 : 0.65);
+        ctx.fillStyle = "#FAFAF6";
+        var fontSize = Math.max(5.5, Math.min(cellW * 0.58, 10));
+        ctx.font = "500 " + fontSize + 'px "Menlo","SF Mono","Monaco",monospace';
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(num.toString(), px + cellW / 2, py + cellH / 2);
+      }
+    });
+  }
+  ctx.globalAlpha = 1;
+}
+
+function updateUI() {
+  document.getElementById("titleText").textContent = "Numbers and Trees: Generative Series 1, Tree #" + activeTrees;
+  document.getElementById("subline").textContent = activeTrees + " of 8 trees \u2014 " + GRID + "\u00D7" + GRID + " grid \u2014 Numbers count outward from trunk center (0) \u2014 Acrylic on Plexiglas";
+  document.getElementById("addBtn").textContent = "+ Add Tree" + (activeTrees < 8 ? " (" + COLOR_NAMES[activeTrees] + ")" : "");
+  document.getElementById("addBtn").disabled = isAnimating || activeTrees >= 8;
+  document.getElementById("addBtn").style.background = (isAnimating || activeTrees >= 8) ? "rgba(0,0,0,0.04)" : "#1a1a1a";
+  document.getElementById("addBtn").style.color = (isAnimating || activeTrees >= 8) ? "rgba(0,0,0,0.2)" : "#fff";
+  document.getElementById("addBtn").style.cursor = (isAnimating || activeTrees >= 8) ? "default" : "pointer";
+  document.getElementById("gridCheck").checked = showGrid;
+  document.getElementById("parallaxHint").textContent = activeTrees > 1 ? "Move mouse to see Plexiglas depth between layers" : "";
+
+  var legendEl = document.getElementById("legend");
+  legendEl.innerHTML = "";
+  for (var i = 0; i < activeTrees; i++) {
+    var d = document.createElement("div");
+    d.style.cssText = "display:flex;align-items:center;gap:4px";
+    d.innerHTML = '<div style="width:10px;height:10px;background:' + COLORS[i] + ';border-radius:1px"></div><span style="font-size:9px;color:rgba(0,0,0,0.35)">Tree ' + (i + 1) + ' (' + COLOR_NAMES[i] + ')</span>';
+    legendEl.appendChild(d);
+  }
+
+  drawScene(activeTrees);
+}
+
+function animateAddTree() {
+  if (activeTrees >= 8 || isAnimating) return;
+  isAnimating = true;
+  var target = activeTrees + 1;
+  var start = performance.now();
+  var duration = 1400;
+  function tick(now) {
+    var t = Math.min((now - start) / duration, 1);
+    var eased = 1 - Math.pow(1 - t, 3);
+    drawScene(target, eased, target - 1);
+    if (t < 1) {
+      animFrame = requestAnimationFrame(tick);
+    } else {
+      activeTrees = target;
+      isAnimating = false;
+      updateUI();
+    }
+  }
+  animFrame = requestAnimationFrame(tick);
+}
+
+function updateTooltip(e) {
+  var canvas = document.getElementById("mainCanvas");
+  if (!canvas) return;
+  var rect = canvas.getBoundingClientRect();
+  var nx = (e.clientX - rect.left) / rect.width - 0.5;
+  var ny = (e.clientY - rect.top) / rect.height - 0.5;
+  mouseOffset = { x: nx, y: ny };
+
+  var pad = 44;
+  var side = Math.min(rect.width - pad * 2, rect.height - pad * 2);
+  var oox = (rect.width - side) / 2;
+  var ooy = (rect.height - side) / 2;
+  var cellW = side / GRID;
+  var cellH = side / GRID;
+  var gx = Math.floor((e.clientX - rect.left - oox) / cellW);
+  var gy = Math.floor((e.clientY - rect.top - ooy) / cellH);
+
+  var tooltip = document.getElementById("tooltip");
+  if (gx >= 0 && gx < GRID && gy >= 0 && gy < GRID) {
+    var occupants = [];
+    for (var t = 0; t < activeTrees; t++) {
+      if (trees[t].cells.has(gx + "," + gy)) {
+        var num = getCellNumber(gx, gy, trees[t].rowCenters);
+        occupants.push({ tree: t + 1, color: COLORS[t], num: num });
+      }
+    }
+    var html = '<div style="margin-bottom:4px;font-weight:600;color:rgba(0,0,0,0.7)">Cell (' + gx + ', ' + gy + ')</div>';
+    if (occupants.length > 0) {
+      occupants.forEach(function(o) {
+        html += '<div style="display:flex;align-items:center;gap:6px;margin-top:3px"><div style="width:8px;height:8px;background:' + o.color + ';border-radius:1px;flex-shrink:0"></div><span>Tree ' + o.tree + ': <strong>' + o.num + '</strong> <span style="opacity:0.5">(' + o.num + ' cells from trunk)</span></span></div>';
+      });
+      if (occupants.length > 1) {
+        html += '<div style="margin-top:4px;font-size:9px;opacity:0.4">' + occupants.length + ' layers overlapping</div>';
+      }
+    } else {
+      html += '<div style="opacity:0.4">Empty cell</div>';
+    }
+    tooltip.innerHTML = html;
+    tooltip.style.display = "block";
+  } else {
+    tooltip.style.display = "none";
+  }
+  drawScene(activeTrees);
+}
+
+function buildUI() {
+  var root = document.getElementById("root");
+  root.innerHTML = '<div style="width:100vw;height:100vh;background:#F0EFEB;display:flex;flex-direction:column;font-family:Menlo,\'SF Mono\',Monaco,monospace;overflow:hidden">'
+    + '<div style="padding:16px 28px 10px;display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid rgba(0,0,0,0.06);flex-shrink:0">'
+      + '<div>'
+        + '<div style="font-size:10px;letter-spacing:0.16em;color:rgba(0,0,0,0.3);text-transform:uppercase;margin-bottom:3px">After Charles Gaines</div>'
+        + '<div id="titleText" style="font-size:19px;font-weight:600;color:#1a1a1a;letter-spacing:-0.02em;font-family:Georgia,\'Times New Roman\',serif"></div>'
+        + '<div id="subline" style="font-size:10px;color:rgba(0,0,0,0.28);margin-top:2px"></div>'
+      + '</div>'
+      + '<div id="legend" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end"></div>'
+    + '</div>'
+    + '<div style="flex:1;position:relative;padding:8px">'
+      + '<canvas id="mainCanvas" style="width:100%;height:100%;cursor:crosshair"></canvas>'
+      + '<div id="tooltip" style="display:none;position:absolute;top:16px;right:16px;background:rgba(255,255,253,0.94);border:1px solid rgba(0,0,0,0.08);padding:8px 12px;font-size:10px;color:rgba(0,0,0,0.55);backdrop-filter:blur(6px);min-width:120px"></div>'
+      + '<div id="parallaxHint" style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(0,0,0,0.15);text-transform:uppercase;letter-spacing:0.12em;pointer-events:none"></div>'
+    + '</div>'
+    + '<div style="padding:10px 28px 16px;display:flex;align-items:center;gap:12px;border-top:1px solid rgba(0,0,0,0.06);flex-shrink:0;flex-wrap:wrap">'
+      + '<button id="addBtn" style="border:none;padding:8px 20px;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;font-family:inherit"></button>'
+      + '<button id="resetBtn" style="background:transparent;color:rgba(0,0,0,0.35);border:1px solid rgba(0,0,0,0.1);padding:7px 14px;font-size:11px;letter-spacing:0.08em;cursor:pointer;text-transform:uppercase;font-family:inherit">Reset</button>'
+      + '<div style="flex:1"></div>'
+      + '<label style="display:flex;align-items:center;gap:5px;font-size:10px;color:rgba(0,0,0,0.3);cursor:pointer;text-transform:uppercase;letter-spacing:0.1em"><input type="checkbox" id="gridCheck" checked style="accent-color:#1a1a1a">Grid</label>'
+      + '<div style="font-size:9px;color:rgba(0,0,0,0.18);text-align:right;line-height:1.5;font-style:italic;font-family:Georgia,serif">\u201CI start with zero in the middle and count<br>outwards from the center left and right.\u201D</div>'
+    + '</div>'
+  + '</div>';
+
+  document.getElementById("addBtn").addEventListener("click", animateAddTree);
+  document.getElementById("resetBtn").addEventListener("click", function() { activeTrees = 1; updateUI(); });
+  document.getElementById("gridCheck").addEventListener("change", function(e) { showGrid = e.target.checked; updateUI(); });
+  document.getElementById("mainCanvas").addEventListener("mousemove", updateTooltip);
+  document.getElementById("mainCanvas").addEventListener("mouseleave", function() {
+    mouseOffset = { x: 0, y: 0 };
+    document.getElementById("tooltip").style.display = "none";
+    drawScene(activeTrees);
+  });
+  window.addEventListener("resize", function() { drawScene(activeTrees); });
+
+  updateUI();
+}
+
+buildUI();
+</script>
+</body>
+</html>
