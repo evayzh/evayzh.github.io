@@ -6,19 +6,30 @@
     <title>evangelion</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body { background: #000; height: 100%; font-family: 'Courier New', monospace; }
-        body {
+        html, body { background: #000; height: 100%; font-family: 'Courier New', monospace; overflow: hidden; }
+        body { display: flex; align-items: center; justify-content: center; }
+        .shell {
             display: flex;
             align-items: center;
-            justify-content: center;
-            flex-direction: column;
+            gap: 0;
+            width: 100vw;
+            height: 100vh;
+        }
+        canvas.viz {
+            flex: 1;
+            height: 100%;
+            display: block;
+            min-width: 0;
+        }
+        .center {
+            position: relative;
+            flex: 0 0 auto;
+            width: min(70vw, 860px);
         }
         .frame {
-            position: relative;
-            width: 90vw;
-            max-width: 860px;
             border: 1px solid rgba(83, 234, 94, 0.15);
-            box-shadow: 0 0 40px rgba(83, 234, 94, 0.05), inset 0 0 30px rgba(0, 0, 0, 0.8);
+            box-shadow: 0 0 40px rgba(83, 234, 94, 0.05), inset 0 0 30px rgba(0,0,0,0.8);
+            position: relative;
         }
         .frame::before, .frame::after {
             content: '';
@@ -28,19 +39,9 @@
             border-color: rgba(83, 234, 94, 0.4);
             border-style: solid;
         }
-        .frame::before {
-            top: -1px; left: -1px;
-            border-width: 1px 0 0 1px;
-        }
-        .frame::after {
-            bottom: -1px; right: -1px;
-            border-width: 0 1px 1px 0;
-        }
-        video {
-            width: 100%;
-            display: block;
-            background: #000;
-        }
+        .frame::before { top: -1px; left: -1px; border-width: 1px 0 0 1px; }
+        .frame::after { bottom: -1px; right: -1px; border-width: 0 1px 1px 0; }
+        video { width: 100%; display: block; background: #000; }
         .hud {
             position: absolute;
             bottom: 60px;
@@ -51,14 +52,212 @@
             text-transform: uppercase;
             pointer-events: none;
         }
+        .prompt {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(83, 234, 94, 0.6);
+            font-size: 11px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            cursor: pointer;
+            padding: 12px 24px;
+            border: 1px solid rgba(83, 234, 94, 0.2);
+            transition: all 0.3s;
+            z-index: 10;
+            pointer-events: auto;
+        }
+        .prompt:hover {
+            color: rgba(83, 234, 94, 0.9);
+            border-color: rgba(83, 234, 94, 0.5);
+            box-shadow: 0 0 20px rgba(83, 234, 94, 0.1);
+        }
+        .prompt.hidden { display: none; }
     </style>
 </head>
 <body>
-    <div class="frame">
-        <video controls preload="metadata">
-            <source src="https://github.com/evayzh/evayzh.github.io/releases/download/evangelion-v1/cruel-thesis-web.mp4" type="video/mp4">
-        </video>
-        <span class="hud">nerv // pattern blue</span>
+    <div class="shell">
+        <canvas class="viz" id="vizL"></canvas>
+        <div class="center">
+            <div class="frame">
+                <video id="vid" crossorigin="anonymous" preload="metadata">
+                    <source src="https://github.com/evayzh/evayzh.github.io/releases/download/evangelion-v1/cruel-thesis-web.mp4" type="video/mp4">
+                </video>
+                <div id="startBtn" class="prompt">initialize</div>
+                <span class="hud">nerv // pattern blue</span>
+            </div>
+        </div>
+        <canvas class="viz" id="vizR"></canvas>
     </div>
+
+    <script>
+    const vid = document.getElementById('vid');
+    const btn = document.getElementById('startBtn');
+    const cL = document.getElementById('vizL');
+    const cR = document.getElementById('vizR');
+    const ctxL = cL.getContext('2d');
+    const ctxR = cR.getContext('2d');
+
+    let analyser, dataArray, audioCtx;
+    let mode = 0;
+    let modeTimer = 0;
+    const MODES = 4;
+    const MODE_DURATION = 8; // seconds per mode
+
+    // eva palette
+    const GREEN  = [83, 234, 94];
+    const PURPLE = [168, 21, 168];
+    const ORANGE = [255, 121, 27];
+    const CYAN   = [0, 224, 224];
+    const colors = [GREEN, PURPLE, ORANGE, CYAN];
+
+    function resize() {
+        cL.width = cL.clientWidth * devicePixelRatio;
+        cL.height = cL.clientHeight * devicePixelRatio;
+        cR.width = cR.clientWidth * devicePixelRatio;
+        cR.height = cR.clientHeight * devicePixelRatio;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    btn.addEventListener('click', () => {
+        btn.classList.add('hidden');
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 256;
+        const src = audioCtx.createMediaElementSource(vid);
+        src.connect(analyser);
+        analyser.connect(audioCtx.destination);
+        dataArray = new Uint8Array(analyser.frequencyBinCount);
+        vid.controls = true;
+        vid.play();
+        draw();
+    });
+
+    function lerp(a, b, t) { return a + (b - a) * t; }
+
+    function rgba(c, a) { return `rgba(${c[0]},${c[1]},${c[2]},${a})`; }
+
+    function drawBars(ctx, w, h, flip) {
+        const bars = 32;
+        const barH = h / bars;
+        for (let i = 0; i < bars; i++) {
+            const d = dataArray[Math.floor(i * dataArray.length / bars)] / 255;
+            const barW = d * w * 0.8;
+            const c = colors[i % colors.length];
+            ctx.fillStyle = rgba(c, d * 0.7 + 0.05);
+            const y = i * barH;
+            if (flip) {
+                ctx.fillRect(w - barW, y, barW, barH - 1);
+            } else {
+                ctx.fillRect(0, y, barW, barH - 1);
+            }
+        }
+    }
+
+    function drawWave(ctx, w, h, flip) {
+        const sliceW = w / dataArray.length;
+        ctx.beginPath();
+        ctx.strokeStyle = rgba(GREEN, 0.5);
+        ctx.lineWidth = 1.5 * devicePixelRatio;
+        for (let i = 0; i < dataArray.length; i++) {
+            const v = dataArray[i] / 255;
+            const y = h * 0.5 + (v - 0.5) * h * 0.8;
+            const x = flip ? w - i * sliceW : i * sliceW;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        // glow
+        ctx.strokeStyle = rgba(GREEN, 0.15);
+        ctx.lineWidth = 4 * devicePixelRatio;
+        ctx.stroke();
+    }
+
+    let scrollOffset = 0;
+    function drawScroll(ctx, w, h, flip) {
+        const cols = 24;
+        const colW = w / cols;
+        scrollOffset += 0.5;
+        for (let i = 0; i < cols; i++) {
+            const d = dataArray[Math.floor(i * dataArray.length / cols)] / 255;
+            const segments = 20;
+            const segH = h / segments;
+            for (let j = 0; j < segments; j++) {
+                const yOff = (j + scrollOffset * 0.1) % segments;
+                const fade = 1 - yOff / segments;
+                const a = d * fade * 0.6;
+                if (a < 0.02) continue;
+                const c = colors[(i + Math.floor(scrollOffset / 30)) % colors.length];
+                ctx.fillStyle = rgba(c, a);
+                const x = flip ? w - (i + 1) * colW : i * colW;
+                ctx.fillRect(x, j * segH, colW - 1, segH - 1);
+            }
+        }
+    }
+
+    let particles = [];
+    function drawParticles(ctx, w, h) {
+        const avg = dataArray.reduce((a, b) => a + b, 0) / dataArray.length / 255;
+        // spawn
+        if (avg > 0.15 && particles.length < 120) {
+            const c = colors[Math.floor(Math.random() * colors.length)];
+            particles.push({
+                x: Math.random() * w,
+                y: h + 2,
+                vx: (Math.random() - 0.5) * 2,
+                vy: -1 - Math.random() * 3 * avg,
+                life: 1,
+                c: c
+            });
+        }
+        for (let i = particles.length - 1; i >= 0; i--) {
+            const p = particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.life -= 0.008;
+            if (p.life <= 0) { particles.splice(i, 1); continue; }
+            ctx.fillStyle = rgba(p.c, p.life * 0.6);
+            const s = p.life * 3 * devicePixelRatio;
+            ctx.fillRect(p.x - s/2, p.y - s/2, s, s);
+        }
+    }
+
+    function draw() {
+        requestAnimationFrame(draw);
+        if (!analyser) return;
+        analyser.getByteFrequencyData(dataArray);
+
+        const wL = cL.width, hL = cL.height;
+        const wR = cR.width, hR = cR.height;
+
+        // fade trail
+        ctxL.fillStyle = 'rgba(0,0,0,0.15)';
+        ctxL.fillRect(0, 0, wL, hL);
+        ctxR.fillStyle = 'rgba(0,0,0,0.15)';
+        ctxR.fillRect(0, 0, wR, hR);
+
+        // cycle modes
+        modeTimer += 1/60;
+        if (modeTimer > MODE_DURATION) {
+            modeTimer = 0;
+            mode = (mode + 1) % MODES;
+            // hard clear on mode switch
+            ctxL.fillStyle = '#000';
+            ctxL.fillRect(0, 0, wL, hL);
+            ctxR.fillStyle = '#000';
+            ctxR.fillRect(0, 0, wR, hR);
+            particles = [];
+        }
+
+        switch (mode) {
+            case 0: drawBars(ctxL, wL, hL, false); drawBars(ctxR, wR, hR, true); break;
+            case 1: drawWave(ctxL, wL, hL, false); drawWave(ctxR, wR, hR, true); break;
+            case 2: drawScroll(ctxL, wL, hL, false); drawScroll(ctxR, wR, hR, true); break;
+            case 3: drawParticles(ctxL, wL, hL); drawParticles(ctxR, wR, hR); break;
+        }
+    }
+    </script>
 </body>
 </html>
