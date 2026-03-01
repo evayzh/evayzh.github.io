@@ -6,14 +6,14 @@
     <title>evangelion</title>
     <style>
         * { margin: 0; padding: 0; }
-        html, body { background: #000; height: 100%; }
+        html, body { background: #000; height: 100%; overflow: hidden; }
         body { display: flex; align-items: center; justify-content: center; }
-        audio { width: 90%; max-width: 500px; }
+        iframe { width: 100vw; height: 100vh; border: 0; }
     </style>
 </head>
 <body>
-    <audio controls autoplay>
-        <source src="cruel-angels-thesis.mp3" type="audio/mpeg">
-    </audio>
+    <iframe src="https://www.youtube-nocookie.com/embed/K5qImvKFtLY?rel=0&modestbranding=1&color=white"
+        allow="autoplay; encrypted-media"
+        allowfullscreen></iframe>
 </body>
 </html>
